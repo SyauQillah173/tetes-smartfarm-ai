@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {}
 
   initNavigationTabs();
+  loadSavedLocationConfig();
   initPWAInstall();
   initChatAssistant();
   initSimulationEngine();
@@ -578,7 +579,7 @@ function updateElectricalPowerCalculations() {
     if (isDirectGrid) {
       powerIcon.className = 'fas fa-plug';
       powerIcon.style.color = '#0284c7';
-      powerVal.textContent = 'Listrik Langsung (PLN)';
+      powerVal.textContent = 'PLN 220V';
       if (batteryPill) batteryPill.style.display = 'none';
     } else {
       powerIcon.className = 'fas fa-solar-panel text-solar';
@@ -1256,7 +1257,7 @@ function initCalculatorInteractions() {
 }
 
 /* ===================================================================
-   AI CHAT ASSISTANT
+   AI CHAT ASSISTANT (MULTI-PHYSICS & REAL-TIME DECISION ENGINE)
    =================================================================== */
 function initChatAssistant() {
   const chatInput = document.getElementById('chatInput');
@@ -1264,17 +1265,74 @@ function initChatAssistant() {
   const chatMessages = document.getElementById('chatMessages');
   const quickTags = document.querySelectorAll('.quick-ask-btn');
 
+  function formatMessageText(text) {
+    if (!text) return '';
+    // Format bold, italics, math formulas, lists
+    let formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11.5px;">$1</code>')
+      .replace(/\n\n/g, '</p><p style="margin-top: 8px;">')
+      .replace(/\n- /g, '<br>• ')
+      .replace(/\n\d+\. /g, '<br>&bull; ')
+      .replace(/\n/g, '<br>');
+    return `<p style="margin: 0;">${formatted}</p>`;
+  }
+
   function appendMessage(sender, text) {
     if (!chatMessages) return;
     const bubble = document.createElement('div');
     bubble.className = `chat-msg ${sender}`;
-    let formatted = text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>');
-    bubble.innerHTML = formatted;
+    const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+    if (sender === 'bot') {
+      bubble.innerHTML = `
+        <div class="chat-msg-header">
+          <span class="chat-sender-badge"><i class="fas fa-robot"></i> AI Agronomist & IoT Genius</span>
+          <span class="chat-time-stamp">${nowTime}</span>
+        </div>
+        <div class="chat-msg-content">${formatMessageText(text)}</div>
+      `;
+    } else {
+      bubble.innerHTML = `
+        <div class="chat-msg-header" style="justify-content: flex-end;">
+          <span class="chat-sender-badge" style="color: #ffffff;"><i class="fas fa-user"></i> Anda</span>
+          <span class="chat-time-stamp" style="color: rgba(255,255,255,0.8);">${nowTime}</span>
+        </div>
+        <div class="chat-msg-content">${formatMessageText(text)}</div>
+      `;
+    }
+
     chatMessages.appendChild(bubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function showTypingIndicator() {
+    if (!chatMessages) return null;
+    const ind = document.createElement('div');
+    ind.className = 'chat-msg bot chat-typing-indicator';
+    ind.id = 'activeTypingIndicator';
+    ind.innerHTML = `
+      <div class="chat-msg-header">
+        <span class="chat-sender-badge"><i class="fas fa-robot"></i> AI Agronomist & IoT Genius</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <em style="font-size: 11.5px; margin-left: 4px;">Menganalisis telemetri & menghitung matematika/fisika...</em>
+      </div>
+    `;
+    chatMessages.appendChild(ind);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return ind;
+  }
+
+  function removeTypingIndicator() {
+    const ind = document.getElementById('activeTypingIndicator');
+    if (ind && ind.parentNode) {
+      ind.parentNode.removeChild(ind);
+    }
   }
 
   function handleSend(query) {
@@ -1283,10 +1341,13 @@ function initChatAssistant() {
     appendMessage('user', text);
     if (chatInput) chatInput.value = '';
 
+    showTypingIndicator();
+
     setTimeout(() => {
+      removeTypingIndicator();
       const reply = AIAssistant.getReply(text);
       appendMessage('bot', reply);
-    }, 300);
+    }, 450);
   }
 
   if (chatSendBtn) {
@@ -1305,6 +1366,157 @@ function initChatAssistant() {
       handleSend(q);
     });
   });
+}
+
+/* ===================================================================
+   SMART FARM & GPS GEOLOCATION CONFIGURATION
+   =================================================================== */
+window.openLocationModal = function() {
+  const modal = document.getElementById('locationConfigModal');
+  if (!modal) return;
+  const storedName = localStorage.getItem('tetes_farm_name') || 'Uji Prototipe 2 Toples (Tanah & Air)';
+  const storedRegion = localStorage.getItem('tetes_farm_region') || 'Kabupaten Gresik';
+  const storedCoords = localStorage.getItem('tetes_farm_coords') || '-7.0396, 112.534';
+
+  const inName = document.getElementById('inputFarmName');
+  const inRegion = document.getElementById('inputFarmRegion');
+  const inCoords = document.getElementById('inputFarmCoords');
+
+  if (inName) inName.value = storedName;
+  if (inRegion) inRegion.value = storedRegion;
+  if (inCoords) inCoords.value = storedCoords;
+
+  const msg = document.getElementById('gpsStatusMessage');
+  if (msg) msg.style.display = 'none';
+
+  modal.style.display = 'flex';
+};
+
+window.closeLocationModal = function() {
+  const modal = document.getElementById('locationConfigModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.detectUserLocationGPS = function() {
+  const msg = document.getElementById('gpsStatusMessage');
+  const btnText = document.getElementById('btnDetectGPSText');
+  if (!navigator.geolocation) {
+    if (msg) {
+      msg.textContent = '❌ Browser Anda tidak mendukung Geolocation GPS.';
+      msg.style.color = '#ef4444';
+      msg.style.display = 'block';
+    }
+    return;
+  }
+
+  if (btnText) btnText.textContent = 'Mencari Satelit...';
+  if (msg) {
+    msg.textContent = '📡 Mengakses sensor GPS / satelit perangkat Anda...';
+    msg.style.color = 'var(--tetes-blue)';
+    msg.style.display = 'block';
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude.toFixed(4);
+      const lng = pos.coords.longitude.toFixed(4);
+      const inCoords = document.getElementById('inputFarmCoords');
+      const inRegion = document.getElementById('inputFarmRegion');
+      if (inCoords) inCoords.value = `${lat}, ${lng}`;
+
+      if (btnText) btnText.textContent = 'Lokasi Terkunci';
+
+      // Reverse geocoding otomatis dengan BigDataCloud (Free, no API key needed)
+      let regionName = 'Lokasi GPS Presisi';
+      try {
+        const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=id`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          regionName = geoData.locality || geoData.city || geoData.principalSubdivision || 'Lokasi Saya';
+        }
+      } catch (e) {
+        regionName = `Wilayah (${lat}, ${lng})`;
+      }
+
+      if (inRegion) inRegion.value = regionName;
+
+      if (msg) {
+        msg.innerHTML = `✅ <strong>Satelit GPS Terkunci!</strong> Terdeteksi: ${regionName} (${lat}°, ${lng}°)`;
+        msg.style.color = '#15803d';
+      }
+
+      // Ambil cuaca Open-Meteo real-time untuk koordinat baru ini
+      fetchLiveWeatherForLocation(Number(lat), Number(lng));
+    },
+    (err) => {
+      if (btnText) btnText.textContent = 'Ambil Lokasi Saya';
+      if (msg) {
+        msg.textContent = `⚠️ Gagal deteksi GPS: ${err.message}. Anda dapat mengetik koordinat secara manual.`;
+        msg.style.color = '#f59e0b';
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+};
+
+window.saveLocationConfig = function() {
+  const inName = document.getElementById('inputFarmName');
+  const inRegion = document.getElementById('inputFarmRegion');
+  const inCoords = document.getElementById('inputFarmCoords');
+
+  const farmName = inName?.value?.trim() || 'Uji Prototipe 2 Toples (Tanah & Air)';
+  const region = inRegion?.value?.trim() || 'Kabupaten Gresik';
+  const coords = inCoords?.value?.trim() || '-7.0396, 112.534';
+
+  try {
+    localStorage.setItem('tetes_farm_name', farmName);
+    localStorage.setItem('tetes_farm_region', region);
+    localStorage.setItem('tetes_farm_coords', coords);
+  } catch (e) {}
+
+  updateLocationHeaderUI(farmName, region, coords);
+  closeLocationModal();
+
+  // Parsing lat & lng untuk cuaca
+  const parts = coords.split(',');
+  if (parts.length === 2) {
+    const lat = parseFloat(parts[0].trim());
+    const lng = parseFloat(parts[1].trim());
+    if (!isNaN(lat) && !isNaN(lng)) {
+      fetchLiveWeatherForLocation(lat, lng);
+    }
+  }
+};
+
+function updateLocationHeaderUI(name, region, coords) {
+  const nameElem = document.getElementById('displayFarmName');
+  const subElem = document.getElementById('displayLocationCoordinates');
+  if (nameElem) nameElem.textContent = name;
+  if (subElem) subElem.textContent = `${region} (${coords}) • GPS Realtime`;
+}
+
+function loadSavedLocationConfig() {
+  const storedName = localStorage.getItem('tetes_farm_name') || 'Uji Prototipe 2 Toples (Tanah & Air)';
+  const storedRegion = localStorage.getItem('tetes_farm_region') || 'Kabupaten Gresik';
+  const storedCoords = localStorage.getItem('tetes_farm_coords') || '-7.0396°S, 112.534°E';
+  updateLocationHeaderUI(storedName, storedRegion, storedCoords);
+}
+
+async function fetchLiveWeatherForLocation(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&timezone=Asia%2FJakarta&forecast_hours=1&current=temperature_2m,relative_humidity_2m&hourly=precipitation,precipitation_probability`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.hourly && data.hourly.precipitation_probability) {
+      const prob = data.hourly.precipitation_probability[0] || 0;
+      AppState.rainProb = Number(prob);
+      setElemText('weatherRainProb', AppState.rainProb.toFixed(0));
+      console.log(`🌦️ [Open-Meteo] Cuaca real-time diperbarui untuk (${lat}, ${lng}): Prob Hujan = ${AppState.rainProb}%`);
+    }
+  } catch(e) {
+    console.warn('Weather fetch notice:', e.message);
+  }
 }
 
 /* ===================================================================

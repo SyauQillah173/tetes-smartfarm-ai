@@ -150,14 +150,15 @@
       
       <!-- TOP APP BAR -->
       <header class="top-app-bar">
-        <div class="location-selector">
+        <div class="location-selector" onclick="openLocationModal()" style="cursor: pointer;" title="Klik untuk ubah nama lahan atau deteksi lokasi GPS otomatis" role="button" tabindex="0">
           <img src="./icons/tetes-symbol.png" alt="TETES Symbol" style="height: 38px; width: 38px; object-fit: contain;">
           <div>
-            <div class="location-badge">
+            <div class="location-badge" style="cursor: pointer;">
               <i class="fas fa-location-dot"></i>
-              <span>Lahan Blok A • Hortikultura Cabai</span>
+              <span id="displayFarmName">Uji Prototipe 2 Toples (Tanah & Air)</span>
+              <i class="fas fa-pen-to-square" style="font-size: 10px; margin-left: 3px; opacity: 0.75;"></i>
             </div>
-            <span class="location-subtext">Kabupaten Gresik (-7.0396°S, 112.534°E) • TETES SmartFarm OS</span>
+            <span id="displayLocationCoordinates" class="location-subtext">Kabupaten Gresik (-7.0396°S, 112.534°E) • GPS Realtime</span>
           </div>
         </div>
 
@@ -171,7 +172,7 @@
           <!-- Smart Power Source Detection (Listrik Langsung PLN vs Baterai EBT) -->
           <div id="headerPowerSourcePill" class="quick-telemetry-chip chip-clickable" onclick="togglePowerSourceMode()" title="Klik untuk beralih antara Listrik Langsung (PLN) dan Baterai EBT">
             <i id="headerPowerIcon" class="fas fa-plug" style="color: #0284c7;"></i>
-            <span id="headerPowerLabel">Sumber: <strong id="headerPowerVal">Listrik Langsung (PLN)</strong></span>
+            <span id="headerPowerLabel"><strong id="headerPowerVal">PLN 220V</strong></span>
           </div>
 
           <!-- Real-time Power Load -->
@@ -865,6 +866,11 @@
               </button>
             </div>
 
+            <div class="table-scroll-hint mobile-only">
+              <i class="fas fa-arrows-left-right"></i>
+              <span>Geser tabel ke samping untuk melihat seluruh 8 parameter sensor lengkap</span>
+            </div>
+
             <div class="enterprise-table-container">
               <table class="enterprise-table">
                 <thead>
@@ -897,28 +903,36 @@
         <div id="tab-ai-consultant" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
           <div class="enterprise-panel">
             <div class="panel-header-bar">
-              <span class="section-pill-green"><i class="fas fa-robot"></i> Asisten Pakar Agronomi & Energi Surya</span>
-              <span class="panel-tag-meta">Decision Support Engine</span>
+              <span class="section-pill-green"><i class="fas fa-robot"></i> Asisten Pakar Agronomi & IoT Genius</span>
+              <span class="panel-tag-meta">Multi-Physics & Realtime Decision Engine</span>
             </div>
 
             <div class="chat-window-box">
               <div id="chatMessages" class="chat-message-list">
                 <div class="chat-msg bot">
-                  Halo! Saya <strong>AI Agronomist TETES</strong>. Saya siap menganalisis data telemetri tanaman cabai Anda, membedah perhitungan efisiensi air 60%, serta menjelaskan cara kerja model AI LSTM dan sistem pembangkit listrik tenaga surya EBT mandiri. Ada yang ingin Anda tanyakan?
+                  <div class="chat-msg-header">
+                    <span class="chat-sender-badge"><i class="fas fa-robot"></i> AI Agronomist & IoT Genius</span>
+                    <span class="chat-time-stamp">Live Assistant</span>
+                  </div>
+                  <div class="chat-msg-content">
+                    Halo! Saya <strong>AI Agronomist & IoT Genius TETES</strong>. Saya terhubung langsung ke telemetri sensor ESP32 Anda secara real-time. Saya siap menganalisis status lengas tanah, menghitung matematika & fisika secara eksak (kebutuhan air toples, debit pompa mikro, VPD termodinamika, beban listrik & baterai), hingga membedah prediksi AI LSTM. Silakan tanyakan hal apa pun atau klik saran di bawah!
+                  </div>
                 </div>
               </div>
 
-              <div style="padding: 8px 14px; background: #ffffff; display: flex; gap: 6px; overflow-x: auto; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
-                <button class="quick-ask-btn" data-ask="Bagaimana kondisi tanaman cabai dan target VPD hari ini?">🌱 Kondisi Cabai & VPD</button>
-                <button class="quick-ask-btn" data-ask="Berapa persen penghematan air sistem TETES dibanding konvensional?">💧 Efisiensi Air 60%</button>
-                <button class="quick-ask-btn" data-ask="Bagaimana sistem EBT Solar Panel dan Baterai bekerja?">☀️ Sistem EBT Surya</button>
-                <button class="quick-ask-btn" data-ask="Jelaskan arsitektur model AI LSTM yang digunakan!">🧠 Model AI LSTM</button>
-                <button class="quick-ask-btn" data-ask="Apa keunggulan kompetitif inovasi ini untuk lomba di Gresik?">🏆 Keunggulan Lomba</button>
+              <!-- Quick Ask Suggestion Chips -->
+              <div class="chat-quick-tags-container">
+                <button class="quick-ask-btn" data-ask="Bagaimana analisis data telemetri sensor ESP32 real-time saat ini?">📊 Analisis Sensor Realtime</button>
+                <button class="quick-ask-btn" data-ask="Hitung volume air, debit pompa, dan durasi siram untuk uji coba 2 toples saya!">🧪 Hitung Uji 2 Toples</button>
+                <button class="quick-ask-btn" data-ask="Berapa persen efisiensi penghematan air sistem TETES vs konvensional dan rumusnya?">💧 Hitung Efisiensi Air (61.6%)</button>
+                <button class="quick-ask-btn" data-ask="Bagaimana perhitungan fisika VPD dan titik embun saat ini?">🌡️ Fisika VPD & Embun</button>
+                <button class="quick-ask-btn" data-ask="Hitung daya listrik, konsumsi energi Wh, dan otonomi baterai sistem!">⚡ Kalkulasi Listrik & Baterai</button>
+                <button class="quick-ask-btn" data-ask="Jelaskan arsitektur model AI LSTM dan bagaimana hasil prediksinya!">🧠 Prediksi AI LSTM</button>
               </div>
 
               <div class="chat-prompt-bar">
-                <input type="text" id="chatInput" class="chat-prompt-input" placeholder="Tanyakan seputar agronomi cabai, efisiensi air, atau energi surya...">
-                <button id="chatSendBtn" class="btn-enterprise btn-enterprise-primary"><i class="fas fa-paper-plane"></i> Kirim</button>
+                <input type="text" id="chatInput" class="chat-prompt-input" placeholder="Tanyakan analisis sensor, rumus matematika, fisika toples, dll...">
+                <button id="chatSendBtn" class="btn-enterprise btn-enterprise-primary" type="button"><i class="fas fa-paper-plane"></i> <span>Kirim</span></button>
               </div>
             </div>
           </div>
@@ -976,6 +990,78 @@
       </div>
 
     </main>
+
+  <!-- MODAL: PENGATURAN LAHAN & DETEKSI LOKASI GPS REAL-TIME -->
+  <div id="locationConfigModal" class="tetes-modal-backdrop" style="display: none;">
+    <div class="tetes-modal-card">
+      <div class="tetes-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="modal-icon-badge"><i class="fas fa-location-dot"></i></div>
+          <div>
+            <h3 class="modal-title">Pengaturan Lahan & Lokasi GPS</h3>
+            <p class="modal-subtitle">Kustomisasi nama pengujian dan sinkronisasi cuaca satelit real-time</p>
+          </div>
+        </div>
+        <button onclick="closeLocationModal()" class="btn-modal-close" type="button" aria-label="Tutup"><i class="fas fa-xmark"></i></button>
+      </div>
+
+      <div class="tetes-modal-body">
+        <!-- Input Nama Lahan / Prototipe -->
+        <div class="form-group-item">
+          <label for="inputFarmName" class="form-item-label">
+            <i class="fas fa-tag text-emerald-500"></i> Nama Lahan / Zona Pengujian:
+          </label>
+          <input type="text" id="inputFarmName" class="form-input-text" placeholder="Contoh: Uji Prototipe 2 Toples (Tanah & Air)" value="Uji Prototipe 2 Toples (Tanah & Air)">
+          <span class="form-help-text">Dapat Anda ketik bebas sesuai tempat pengujian (misal: "Toples Tanah & Air di Rumah", "Polybag Cabai", dll).</span>
+        </div>
+
+        <!-- Tombol GPS Otomatis -->
+        <div class="gps-autodetect-box">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--tetes-navy);">
+                <i class="fas fa-crosshairs text-cyan-500"></i> Deteksi Lokasi Otomatis (GPS HP/Laptop)
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ambil titik koordinat akurat perangkat Anda secara instan via satelit GPS.</div>
+            </div>
+            <button type="button" id="btnDetectGPS" onclick="detectUserLocationGPS()" class="btn-enterprise btn-enterprise-primary" style="font-size: 11.5px; padding: 7px 14px;">
+              <i class="fas fa-location-crosshairs"></i> <span id="btnDetectGPSText">Ambil Lokasi Saya</span>
+            </button>
+          </div>
+          <div id="gpsStatusMessage" style="display: none; margin-top: 8px; font-size: 11.5px; font-weight: 600;"></div>
+        </div>
+
+        <!-- Detail Wilayah & Koordinat -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+          <div class="form-group-item">
+            <label for="inputFarmRegion" class="form-item-label">Kota / Wilayah:</label>
+            <input type="text" id="inputFarmRegion" class="form-input-text" placeholder="Kabupaten Gresik" value="Kabupaten Gresik">
+          </div>
+          <div class="form-group-item">
+            <label for="inputFarmCoords" class="form-item-label">Latitude, Longitude:</label>
+            <input type="text" id="inputFarmCoords" class="form-input-text" placeholder="-7.0396, 112.534" value="-7.0396, 112.534">
+          </div>
+        </div>
+
+        <!-- Info Prototipe 2 Toples -->
+        <div style="margin-top: 14px; padding: 12px 14px; background: rgba(2, 132, 199, 0.07); border: 1.5px dashed #38bdf8; border-radius: 10px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-flask"></i> Mode Uji Laboratorium / Rumah (2 Toples Tanah & Air)
+          </div>
+          <div style="font-size: 11px; color: #334155; margin-top: 4px; line-height: 1.5;">
+            Sistem cerdas AI dan kalkulator agronomi akan otomatis menyesuaikan simulasi untuk pengujian 2 toples kecil (toples air cadangan + toples tanah sensor). Data telemetri sensor tetap 100% riil dari ESP32 Anda.
+          </div>
+        </div>
+      </div>
+
+      <div class="tetes-modal-footer">
+        <button type="button" onclick="closeLocationModal()" class="btn-enterprise btn-enterprise-secondary">Batal</button>
+        <button type="button" onclick="saveLocationConfig()" class="btn-enterprise btn-enterprise-primary">
+          <i class="fas fa-check"></i> Simpan Pengaturan
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Floating Scroll To Top Button -->
   <button id="btnScrollToTop" class="btn-scroll-top" title="Kembali ke atas" aria-label="Kembali ke atas">
