@@ -1336,6 +1336,110 @@ input[type="text"], input[type="number"], select {
 .actuator-status-tag.on { background: #dcfce7; color: #15803d; }
 .actuator-status-tag.off { background: #f1f5f9; color: #64748b; }
 
+/* Industrial Toggle Switch Styling */
+.actuator-card {
+  background: var(--bg-card-inner);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.actuator-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actuator-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actuator-state-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+}
+
+.actuator-state-badge.on {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.actuator-state-badge.off {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.switch-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.industrial-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+}
+
+.industrial-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.ind-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 9999px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ind-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.industrial-toggle input:checked + .ind-slider {
+  background: linear-gradient(135deg, var(--tetes-lime), var(--tetes-green));
+}
+
+.industrial-toggle input:checked + .ind-slider:before {
+  transform: translateX(22px);
+}
+
+.industrial-toggle input:disabled + .ind-slider {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btn-toggle-actuator {
   width: 100%;
   padding: 10px;
@@ -1550,63 +1654,352 @@ input[type="text"], input[type="number"], select {
 }
 
 /* ===================================================================
-   RESPONSIVE DESIGN (MOBILE READY FOR JUDGES' SMARTPHONES)
+   RESPONSIVE DESIGN (FOR SMARTPHONES, TABLETS & PWA MOBILE INSTALL)
    =================================================================== */
-@media (max-width: 900px) {
+
+/* Tablet & Mobile Breakpoint (<= 992px) */
+@media (max-width: 992px) {
   .enterprise-container {
     flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
   }
 
+  /* Fixed Desktop Sidebar becomes Top Mobile Header + Horizontal Pill Bar */
   .app-sidebar {
     width: 100%;
     height: auto;
-    position: relative;
-    top: auto;
+    position: sticky;
+    top: 0;
     bottom: auto;
     left: auto;
     border-right: none;
     border-bottom: 1.5px solid var(--border-subtle);
+    z-index: 150;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 4px 18px rgba(11, 53, 94, 0.08);
   }
 
-  .app-main {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .sidebar-nav {
+  .sidebar-header {
+    padding: 10px 16px 6px;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: none;
+  }
+
+  .sidebar-brand-logo {
+    max-height: 36px;
+  }
+
+  .sidebar-header-subtitle {
+    display: none; /* Keep mobile topbar clean */
+  }
+
+  .nav-section-title {
+    display: none;
+  }
+
+  /* Smooth Horizontal Scrollable Tab Pills for Mobile */
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 4px 16px 10px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .nav-item-btn {
+    flex-shrink: 0;
     width: auto;
+    white-space: nowrap;
+    padding: 7px 14px;
     font-size: 12px;
-    padding: 8px 12px;
+    font-weight: 700;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 1.5px solid var(--border-medium);
+    color: var(--text-main);
+    box-shadow: 0 2px 6px rgba(11, 53, 94, 0.04);
+  }
+
+  .nav-item-btn.active {
+    background: linear-gradient(135deg, var(--tetes-lime), var(--tetes-green));
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(60, 168, 43, 0.35);
+  }
+
+  .nav-item-btn.active::before {
+    display: none;
+  }
+
+  .nav-item-btn.active i {
+    color: #ffffff;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  /* Main Viewport Content */
+  .app-main {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
   }
 
   .top-app-bar {
-    padding: 0 16px;
-    flex-direction: column;
+    position: relative;
+    top: auto;
     height: auto;
-    gap: 10px;
-    padding: 12px 16px;
-  }
-
-  .pdf-hero-card {
+    padding: 10px 16px;
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    border-bottom: 1px solid var(--border-subtle);
   }
 
-  .pdf-hero-left {
-    max-width: 100%;
+  .location-selector {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-tools {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
   }
 
   .page-viewport {
-    padding: 16px;
+    padding: 14px 14px 40px;
+    gap: 16px;
   }
 
   .layout-2col-grid {
     grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .pdf-hero-card {
+    flex-direction: column;
+    padding: 22px 18px;
+    gap: 20px;
+  }
+
+  .pdf-hero-left {
+    width: 100%;
+  }
+
+  .pdf-hero-center {
+    width: 100%;
+    align-items: center;
+  }
+
+  .pdf-hero-benchmark {
+    width: 100%;
+  }
+}
+
+/* Smartphone Specific Screens (<= 640px) */
+@media (max-width: 640px) {
+  .page-viewport {
+    padding: 10px 10px 36px;
+  }
+
+  .pdf-brand-title {
+    font-size: 2rem;
+  }
+
+  .pdf-brand-subtitle {
+    font-size: 1.05rem;
+  }
+
+  /* 2-Column Telemetry KPI Cards for Native App Feel */
+  .kpi-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 14px 12px;
+    border-radius: 18px;
+  }
+
+  .kpi-title {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .kpi-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .kpi-main-val {
+    font-size: 22px;
+  }
+
+  .kpi-unit {
+    font-size: 12px;
+  }
+
+  .kpi-footer-meta {
+    font-size: 9.5px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  /* 2-Column 6-Step Workflow */
+  .workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .workflow-node {
+    padding: 12px 8px;
+    border-radius: 16px;
+  }
+
+  .workflow-node-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .workflow-node-num {
+    width: 18px;
+    height: 18px;
+    font-size: 9.5px;
+  }
+
+  .workflow-node-title {
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .workflow-node-desc {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  /* Solar SCADA Container Stacks Full Width on Mobile */
+  .ebt-scada-container {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .battery-scada-gauge {
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* Mode Segmented Controls */
+  .mode-segmented-control {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .mode-tab-btn {
+    font-size: 11px;
+    padding: 8px 6px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Actuator Control Cards */
+  .actuator-switches-grid,
+  .actuator-rack-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .actuator-card-unit,
+  .actuator-card {
+    padding: 14px;
+  }
+
+  /* SCADA Status Strip */
+  .scada-status-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .scada-status-right {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Impact 4 Pillars Cards */
+  .impact-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .impact-card {
+    padding: 16px;
+  }
+
+  /* PWA Banner */
+  #pwaInstallBanner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  #pwaInstallBanner > div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  #pwaInstallBanner .btn-enterprise {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Chat Window */
+  .chat-window-box {
+    height: 380px;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+    font-size: 12.5px;
+  }
+
+  /* Floating Scroll Button */
+  .btn-scroll-top {
+    bottom: 18px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
   }
 }
