@@ -71,6 +71,11 @@ const AppState = {
   pwaDeferredPrompt: null
 };
 
+// Expose AppState globally to window for AI Assistant & sub-modules
+if (typeof window !== 'undefined') {
+  window.AppState = AppState;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 TETES SmartFarm OS Initialized');
 

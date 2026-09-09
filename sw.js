@@ -40,14 +40,24 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = event.request.url;
+
+  // Hanya proses protokol http/https, abaikan chrome-extension:// atau skema browser lainnya
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+
+  // Abaikan request API dinamis (Firebase RTDB, Open-Meteo) dari cache offline statis
+  if (url.includes('firebasedatabase.app') || url.includes('open-meteo.com')) {
+    return;
+  }
+
   // Network first with cache fallback
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, responseClone).catch(() => {});
           });
         }
         return networkResponse;
