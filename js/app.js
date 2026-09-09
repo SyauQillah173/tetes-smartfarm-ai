@@ -76,14 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Restore persistent device hardware session across browser reloads
   try {
-    const storedBoot = localStorage.getItem('tetes_device_boot_time');
+    const storedBootUnix = localStorage.getItem('tetes_device_boot_unix');
+    const storedBootTime = localStorage.getItem('tetes_device_boot_time');
     const storedLastSeen = localStorage.getItem('tetes_device_last_seen');
     const now = Date.now();
-    if (storedBoot && storedLastSeen && (now - Number(storedLastSeen) < 25000)) {
+    const bootMs = storedBootUnix ? Number(storedBootUnix) * 1000 : (storedBootTime ? Number(storedBootTime) : null);
+
+    if (bootMs && (!storedLastSeen || (now - Number(storedLastSeen) < 180000))) {
       AppState.isDeviceOnline = true;
-      AppState.deviceOnlineSince = new Date(Number(storedBoot));
-      AppState.deviceUptimeSeconds = Math.max(0, Math.floor((now - Number(storedBoot)) / 1000));
-      console.log(`⚡ [TETES IoT] Sesi alat dipulihkan dari boot sebelumnya: ${AppState.deviceUptimeSeconds} detik uptime`);
+      AppState.deviceOnlineSince = new Date(bootMs);
+      AppState.deviceUptimeSeconds = Math.max(0, Math.floor((now - bootMs) / 1000));
+      console.log(`⚡ [TETES IoT] Hardware uptime dipulihkan dari boot alat: ${AppState.deviceUptimeSeconds} detik`);
     }
   } catch (e) {}
 
@@ -101,13 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
     AIAnalytics.initCharts();
   }
 
-  // Initialize Firebase connector with live telemetry, prediction, status, and history
+  // Initialize Firebase connector with live telemetry, prediction, status, history & stream session
   if (window.FirebaseConnector) {
     FirebaseConnector.init(
       (record, key, isFresh, meta) => handleFirebaseTelemetry(record, key, isFresh, meta),
       (pred) => handleFirebasePrediction(pred),
       (status, meta) => handleFirebaseStatusChange(status, meta),
-      (records) => handleFirebaseHistory(records)
+      (records) => handleFirebaseHistory(records),
+      (session) => handleFirebaseHardwareSession(session)
     );
   }
 
@@ -335,36 +339,62 @@ function syncActuatorState() {
 /* ===================================================================
    DEVICE GUARDIAN & OPERATING LIFECYCLE (ONLINE / OFFLINE LOGIC)
    =================================================================== */
+function handleFirebaseHardwareSession(session) {
+  if (!session || !session.bootUnix) return;
+  const bootMs = session.bootUnix * 1000;
+  AppState.deviceOnlineSince = session.bootDate || new Date(bootMs);
+  if (session.uptimeSeconds !== undefined) {
+    AppState.deviceUptimeSeconds = session.uptimeSeconds;
+  }
+  AppState.isDeviceOnline = true;
+  AppState.deviceOfflineSince = null;
+  try {
+    localStorage.setItem('tetes_device_boot_unix', session.bootUnix);
+    localStorage.setItem('tetes_device_boot_time', bootMs);
+    localStorage.setItem('tetes_device_last_seen', Date.now());
+  } catch (e) {}
+  updateElectricalPowerCalculations();
+  updateDeviceGuardianUI();
+}
+
 function setDeviceOnlineState(online, meta = {}) {
   const wasOnline = AppState.isDeviceOnline;
-  AppState.isDeviceOnline = online;
   const now = Date.now();
 
   if (online) {
-    if (!wasOnline) {
-      // Cek apakah ini kelanjutan dari sesi perangkat aktif (misal baru direfresh browsernya)
-      let storedBoot = null;
-      let storedLastSeen = null;
+    AppState.isDeviceOnline = true;
+    AppState.deviceOfflineSince = null;
+
+    // 1. Jika ada sessionStartUnix dari aliran data Firebase (ALAT ASLI)
+    if (meta.sessionStartUnix && meta.sessionStartUnix > 0) {
+      const streamBootMs = meta.sessionStartUnix * 1000;
+      AppState.deviceOnlineSince = new Date(streamBootMs);
+      if (meta.hardwareUptime !== undefined && meta.hardwareUptime > 0) {
+        AppState.deviceUptimeSeconds = meta.hardwareUptime;
+      }
       try {
-        storedBoot = localStorage.getItem('tetes_device_boot_time');
-        storedLastSeen = localStorage.getItem('tetes_device_last_seen');
+        localStorage.setItem('tetes_device_boot_unix', meta.sessionStartUnix);
+        localStorage.setItem('tetes_device_boot_time', streamBootMs);
+      } catch (e) {}
+    } else if (!AppState.deviceOnlineSince) {
+      // 2. Coba pulihkan dari rekaman sesi boot alat di localStorage
+      let storedBootUnix = null;
+      try {
+        storedBootUnix = localStorage.getItem('tetes_device_boot_unix');
       } catch (e) {}
 
-      if (storedBoot && storedLastSeen && (now - Number(storedLastSeen) < 25000)) {
-        // Alat terus aktif tanpa henti, lanjutkan uptime asli alat!
-        AppState.deviceOnlineSince = new Date(Number(storedBoot));
-        AppState.deviceUptimeSeconds = Math.max(0, Math.floor((now - Number(storedBoot)) / 1000));
-        console.log(`🟢 [TETES IoT] Melanjutkan Uptime Alat: ${AppState.deviceUptimeSeconds} detik`);
+      if (storedBootUnix && Number(storedBootUnix) > 0) {
+        const streamBootMs = Number(storedBootUnix) * 1000;
+        AppState.deviceOnlineSince = new Date(streamBootMs);
+        AppState.deviceUptimeSeconds = Math.max(0, Math.floor((now - streamBootMs) / 1000));
       } else {
-        // Alat baru pertama kali nyala atau baru dinyalakan kembali setelah mati
         AppState.deviceOnlineSince = new Date();
         AppState.deviceUptimeSeconds = 0;
         try {
           localStorage.setItem('tetes_device_boot_time', now);
+          localStorage.setItem('tetes_device_boot_unix', Math.floor(now / 1000));
         } catch(e) {}
-        console.log('🟢 [TETES IoT] Perangkat Terdeteksi ONLINE & AKTIF (Sesi Baru)');
       }
-      AppState.deviceOfflineSince = null;
     }
 
     try {
@@ -375,13 +405,11 @@ function setDeviceOnlineState(online, meta = {}) {
       AppState.telemetryAgeSec = meta.ageSec;
     }
   } else {
+    // Hanya nyatakan offline jika data benar-benar terhenti
     if (wasOnline) {
+      AppState.isDeviceOnline = false;
       AppState.deviceOfflineSince = new Date();
       AppState.deviceOfflineSeconds = 0;
-      AppState.deviceOnlineSince = null;
-      try {
-        localStorage.removeItem('tetes_device_boot_time');
-      } catch(e) {}
       console.log('🔴 [TETES IoT] Perangkat Terdeteksi OFFLINE / BELUM DINYALAKAN');
     }
   }
@@ -803,13 +831,25 @@ function handleFirebaseTelemetry(record, key, isFresh, meta) {
   const fresh = (isFresh !== undefined) ? isFresh : true;
   setDeviceOnlineState(fresh, meta || {});
 
-  // Smart Hardware Uptime Tracking (Langsung membaca millis CPU ESP32)
+  // Smart Hardware Uptime Tracking (Membaca millis CPU ESP32 atau Stream Session Asli Alat)
   if (record.uptime_seconds !== undefined && Number(record.uptime_seconds) > 0) {
     const hwUptime = Math.floor(Number(record.uptime_seconds));
     AppState.deviceUptimeSeconds = hwUptime;
     AppState.deviceOnlineSince = new Date(Date.now() - hwUptime * 1000);
     try {
       localStorage.setItem('tetes_device_boot_time', AppState.deviceOnlineSince.getTime());
+      localStorage.setItem('tetes_device_boot_unix', Math.floor(AppState.deviceOnlineSince.getTime() / 1000));
+      localStorage.setItem('tetes_device_last_seen', now);
+    } catch(e) {}
+  } else if (meta && meta.sessionStartUnix && meta.sessionStartUnix > 0) {
+    const streamBootMs = meta.sessionStartUnix * 1000;
+    AppState.deviceOnlineSince = new Date(streamBootMs);
+    if (meta.hardwareUptime !== undefined && meta.hardwareUptime > 0) {
+      AppState.deviceUptimeSeconds = meta.hardwareUptime;
+    }
+    try {
+      localStorage.setItem('tetes_device_boot_time', streamBootMs);
+      localStorage.setItem('tetes_device_boot_unix', meta.sessionStartUnix);
       localStorage.setItem('tetes_device_last_seen', now);
     } catch(e) {}
   }
