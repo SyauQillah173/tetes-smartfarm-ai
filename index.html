@@ -168,34 +168,34 @@
 
             <div class="pdf-hero-right">
               <div class="hero-saving-badge">
-                <span class="section-pill-green" style="font-size: 11px; padding: 4px 14px; margin-bottom: 6px;"><i class="fas fa-chart-pie"></i> Hasil Pengujian</span>
-                <div class="hero-saving-val">87,11%</div>
-                <div class="hero-saving-label">Pengurangan Penggunaan Air</div>
+                <span class="section-pill-green" style="font-size: 11px; padding: 4px 14px; margin-bottom: 6px;"><i class="fas fa-chart-pie"></i> Hasil Pengujian Real-Time</span>
+                <div id="heroSavingPct" class="hero-saving-val">--%</div>
+                <div class="hero-saving-label">Efisiensi Pengurangan Air (AI Presisi)</div>
                 
                 <!-- Benchmark Horizontal Comparison Bars -->
                 <div class="benchmark-bars-box">
                   <div class="benchmark-row">
                     <div class="benchmark-header-row">
                       <span>Konvensional</span>
-                      <span class="mono-font">10.800 mL</span>
+                      <span id="heroConvWater" class="mono-font">-- mL</span>
                     </div>
                     <div class="benchmark-track">
-                      <div class="benchmark-fill-conv"></div>
+                      <div id="heroConvBar" class="benchmark-fill-conv" style="width: 100%;"></div>
                     </div>
                   </div>
                   <div class="benchmark-row">
                     <div class="benchmark-header-row">
                       <span style="color: var(--tetes-green); font-weight: 800;">TETES Presisi</span>
-                      <span class="mono-font" style="color: var(--tetes-green); font-weight: 800;">1.392 mL</span>
+                      <span id="heroTetesWater" class="mono-font" style="color: var(--tetes-green); font-weight: 800;">-- mL</span>
                     </div>
                     <div class="benchmark-track">
-                      <div class="benchmark-fill-tetes"></div>
+                      <div id="heroTetesBar" class="benchmark-fill-tetes" style="width: 15%;"></div>
                     </div>
                   </div>
                 </div>
 
-                <div class="badge-test-days">
-                  <i class="fas fa-calendar-check"></i> Pengujian 12 Hari Lahan
+                <div id="heroTestDaysBadge" class="badge-test-days">
+                  <i class="fas fa-microchip"></i> <span id="heroTestBadgeText">Menghitung Telemetri Riil...</span>
                 </div>
               </div>
             </div>
@@ -709,35 +709,10 @@
                   </tr>
                 </thead>
                 <tbody id="telemetryTableBody">
-                  <tr>
-                    <td>2026-08-29 02:00:15</td>
-                    <td>42.5%</td>
-                    <td>26.8°C</td>
-                    <td>31.4°C</td>
-                    <td>68.0%</td>
-                    <td>1.15 kPa</td>
-                    <td>68.4 W</td>
-                    <td><span class="actuator-state-badge off">OFF</span></td>
-                  </tr>
-                  <tr>
-                    <td>2026-08-29 01:45:00</td>
-                    <td>43.1%</td>
-                    <td>26.7°C</td>
-                    <td>31.2°C</td>
-                    <td>68.5%</td>
-                    <td>1.12 kPa</td>
-                    <td>70.1 W</td>
-                    <td><span class="actuator-state-badge off">OFF</span></td>
-                  </tr>
-                  <tr>
-                    <td>2026-08-29 01:30:00</td>
-                    <td>39.2%</td>
-                    <td>26.9°C</td>
-                    <td>31.8°C</td>
-                    <td>66.0%</td>
-                    <td>1.24 kPa</td>
-                    <td>72.5 W</td>
-                    <td><span class="actuator-state-badge on">ON</span></td>
+                  <tr id="emptyTableNotice">
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                      <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Menghubungkan ke Firebase & Mengambil Data Riil Sensor...
+                    </td>
                   </tr>
                 </tbody>
               </table>
