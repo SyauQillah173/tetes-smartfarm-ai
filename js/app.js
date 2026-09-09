@@ -544,6 +544,12 @@ function updateElectricalPowerCalculations() {
       }
     }
   }
+
+  // Tab 2 SCADA Power Update
+  const tab2BatteryPct = document.getElementById('tab2BatteryPct');
+  if (tab2BatteryPct) {
+    tab2BatteryPct.textContent = isDirectGrid ? '100' : `${AppState.batterySoC.toFixed(0)}`;
+  }
 }
 
 /* ===================================================================
@@ -809,21 +815,18 @@ function updateAllUI() {
     AppState.solenoidActive = decision.solenoidActive;
   }
 
-  // 2. Update Electrical Power & Device Guardian
-  updateElectricalPowerCalculations();
-  updateDeviceGuardianUI();
-  evaluateSoilAndWaterIntelligence();
-
-  // 3. Update Header & KPI Values
+  // 2. Update Header & KPI Values
   setElemText('headerSolarWatt', `${AppState.solarPowerWatt.toFixed(1)} W`);
-  setElemText('headerBatteryPct', `${AppState.batterySoC.toFixed(0)}%`);
+  if (AppState.powerSource !== 'AC_GRID') {
+    setElemText('headerBatteryPct', `${AppState.batterySoC.toFixed(0)}%`);
+  }
 
   setElemText('heroMoistureVal', AppState.soilMoisture !== null ? AppState.soilMoisture.toFixed(1) : '--');
   setElemText('heroSolarVal', AppState.solarPowerWatt.toFixed(1));
-  setElemText('heroBatteryVal', AppState.batterySoC.toFixed(0));
+  // Note: heroBatteryVal (Card 3 Sumber Daya) dikontrol secara cerdas oleh updateElectricalPowerCalculations()
   setElemText('heroVpdVal', AppState.vpd !== null ? AppState.vpd.toFixed(2) : '--');
 
-  // 4. Update Status Strip
+  // 3. Update Status Strip
   setElemText('decisionActionTitle', AppState.decisionText);
   setElemText('decisionActionReason', AppState.reasonText);
   setElemText('decisionLstmVal', AppState.aiPrediction !== null ? AppState.aiPrediction.toFixed(1) : '--');
@@ -834,32 +837,35 @@ function updateAllUI() {
     scadaBadge.className = `status-badge-chip ${AppState.autoMode ? 'active-auto' : 'active-manual'}`;
   }
 
-  // 5. Update Telemetry Metric Boxes
+  // 4. Update Telemetry Metric Boxes
   setElemText('gaugeAirTempNum', AppState.airTemp !== null ? AppState.airTemp.toFixed(1) : '--');
   setElemText('gaugeAirHumiNum', AppState.airHumidity !== null ? AppState.airHumidity.toFixed(1) : '--');
   setElemText('gaugeSoilTempNum', AppState.soilTemp !== null ? AppState.soilTemp.toFixed(1) : '--');
   setElemText('gaugeDewPointNum', AppState.dewPoint !== null ? AppState.dewPoint.toFixed(1) : '--');
   setElemText('weatherRainProb', AppState.rainProb.toFixed(0));
 
-  // 6. Update EBT Solar & Battery Panel
+  // 5. Update EBT Solar Panel
   setElemText('solarWattBadge', `${AppState.solarPowerWatt.toFixed(1)} W`);
   setElemText('solarVoltText', `${AppState.solarVoltage.toFixed(1)} V`);
   setElemText('solarAmpText', `${AppState.solarCurrent.toFixed(2)} A`);
   setElemText('solarRadText', `${AppState.solarIrradiance} W/m²`);
   setElemText('solarCarbonText', `${AppState.totalCarbonSavedKg.toFixed(2)} kg CO₂`);
 
-  const batteryBar = document.getElementById('batteryBarInner');
-  if (batteryBar) {
-    batteryBar.style.width = `${AppState.batterySoC}%`;
-    if (AppState.batterySoC < 25) {
-      batteryBar.style.background = 'linear-gradient(90deg, #f43f5e, #fb7185)';
-    } else if (AppState.batterySoC < 50) {
-      batteryBar.style.background = 'linear-gradient(90deg, #f59e0b, #facc15)';
-    } else {
-      batteryBar.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+  // Battery bar & percentage (Hanya jika mode BATERAI, jika PLN ditangani oleh updateElectricalPowerCalculations)
+  if (AppState.powerSource !== 'AC_GRID') {
+    const batteryBar = document.getElementById('batteryBarInner');
+    if (batteryBar) {
+      batteryBar.style.width = `${AppState.batterySoC}%`;
+      if (AppState.batterySoC < 25) {
+        batteryBar.style.background = 'linear-gradient(90deg, #f43f5e, #fb7185)';
+      } else if (AppState.batterySoC < 50) {
+        batteryBar.style.background = 'linear-gradient(90deg, #f59e0b, #facc15)';
+      } else {
+        batteryBar.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+      }
     }
+    setElemText('batteryPctText', `${AppState.batterySoC.toFixed(0)}%`);
   }
-  setElemText('batteryPctText', `${AppState.batterySoC.toFixed(0)}%`);
 
   // EBT Advisory
   const energyAdvisory = SolarEBTEngine.getEnergyAdvisory(AppState.batterySoC, AppState.solarPowerWatt, AppState.soilMoisture < 40, AppState.rainProb);
@@ -876,6 +882,12 @@ function updateAllUI() {
 
   // 9. Render Real Telemetry Table in Data Logs Tab
   renderTelemetryTable();
+
+  // 10. Master Electrical Power SCADA, Guardian & Agronomic Intelligence
+  // (Executed at the end so it has authoritative override on all power & battery elements)
+  updateElectricalPowerCalculations();
+  updateDeviceGuardianUI();
+  evaluateSoilAndWaterIntelligence();
 }
 
 function updateSolarEBTRealtime() {
@@ -904,7 +916,8 @@ function updateSolarEBTRealtime() {
 
   // Update Tab 2 Solar SCADA Telemetry
   setElemText('tab2SolarWatt', AppState.solarPowerWatt.toFixed(1));
-  setElemText('tab2BatteryPct', AppState.batterySoC.toFixed(0));
+  const isDirectGrid = (AppState.powerSource === 'AC_GRID');
+  setElemText('tab2BatteryPct', isDirectGrid ? '100' : AppState.batterySoC.toFixed(0));
   setElemText('tab2DailyKwh', AppState.dailyCleanEnergyKWh.toFixed(2));
   setElemText('tab2CarbonKg', AppState.totalCarbonSavedKg.toFixed(2));
 

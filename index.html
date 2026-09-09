@@ -371,16 +371,16 @@
 
             <div class="kpi-card">
               <div class="kpi-card-header">
-                <span id="heroPowerTitle" class="kpi-title">Kapasitas Baterai (SoC)</span>
-                <div class="kpi-icon-wrapper"><i id="heroPowerIcon" class="fas fa-battery-three-quarters text-cyan-400"></i></div>
+                <span id="heroPowerTitle" class="kpi-title">Sumber Daya Sistem</span>
+                <div class="kpi-icon-wrapper"><i id="heroPowerIcon" class="fas fa-plug text-cyan-400"></i></div>
               </div>
               <div class="kpi-main-val">
-                <span id="heroBatteryVal" class="mono-font">--</span>
-                <span id="heroBatteryUnit" class="kpi-unit">%</span>
+                <span id="heroBatteryVal" class="mono-font">PLN</span>
+                <span id="heroBatteryUnit" class="kpi-unit">220V</span>
               </div>
               <div class="kpi-footer-meta">
-                <span id="heroBatteryMeta">LiFePO4 12V 30Ah</span>
-                <span id="heroBatteryBadge" class="kpi-range-pill good">Otonom 3 Hari</span>
+                <span id="heroBatteryMeta">Adaptor AC-DC Kontinu</span>
+                <span id="heroBatteryBadge" class="kpi-range-pill good">Listrik Langsung</span>
               </div>
             </div>
 
@@ -512,14 +512,14 @@
 
                   <div class="battery-scada-gauge">
                     <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
-                      <span id="scadaPowerSourceTitle">Baterai LiFePO4 12V</span>
-                      <span id="batteryPctText" class="mono-font" style="color: var(--brand-primary);">88%</span>
+                      <span id="scadaPowerSourceTitle">Mode Catu Daya: Listrik Langsung (PLN)</span>
+                      <span id="batteryPctText" class="mono-font" style="color: #0284c7;">Kontinu 100%</span>
                     </div>
                     <div class="battery-scada-meter">
-                      <div id="batteryBarInner" class="battery-scada-fill"></div>
+                      <div id="batteryBarInner" class="battery-scada-fill" style="width: 100%; background: linear-gradient(90deg, #0284c7, #38bdf8);"></div>
                     </div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                      <span id="scadaPowerSourceSub">Reduksi Karbon: <strong id="solarCarbonText" style="color: var(--cyan-accent);">0.36 kg CO₂</strong></span>
+                      <span id="scadaPowerSourceSub">Pasokan Listrik PLN Stabil • Beban Terukur: <strong style="color: #f59e0b;">2.2 W</strong></span>
                     </div>
                   </div>
                 </div>
@@ -678,9 +678,9 @@
                 <span class="scada-metric-sub">Kapasitas: 100 Wp Monocrystalline</span>
               </div>
               <div class="scada-metric-box">
-                <span class="scada-metric-title">Kapasitas Baterai (SoC)</span>
-                <div class="scada-metric-val"><span id="tab2BatteryPct">88</span><span style="font-size: 13px; color: var(--text-dim);">%</span></div>
-                <span class="scada-metric-sub">LiFePO4 12V 30Ah (360 Wh)</span>
+                <span class="scada-metric-title">Pasokan Daya Sistem</span>
+                <div class="scada-metric-val"><span id="tab2BatteryPct">100</span><span style="font-size: 13px; color: var(--text-dim);">%</span></div>
+                <span class="scada-metric-sub">Adaptor AC-DC (PLN 220V)</span>
               </div>
               <div class="scada-metric-box">
                 <span class="scada-metric-title">Produksi Bersih Hari Ini</span>
