@@ -7,3 +7,32 @@ $RECYCLE.BIN/
 
 # Logs
 *.log
+
+# Private Learning Notes, Documents & Personal Data (Keep Local Only)
+*.txt
+catatan/
+catatan_pribadi/
+private/
+PANDUAN_*.md
+CATATAN_*.md
+NOTE*.md
+*.docx
+*.pdf
+
+# Environment Variables & Secrets
+.env
+.env.*
+*.env
+*serviceAccount*.json
+*credentials*.json
+*.pem
+*.key
+*.cert
+secret*
+
+# Temporary & Cache Files
+*.bak
+*.tmp
+*.swp
+scratch/
+
