@@ -1344,9 +1344,20 @@ function initChatAssistant() {
     showTypingIndicator();
 
     setTimeout(() => {
-      removeTypingIndicator();
-      const reply = AIAssistant.getReply(text);
-      appendMessage('bot', reply);
+      try {
+        removeTypingIndicator();
+        let reply = '';
+        if (window.AIAssistant && typeof window.AIAssistant.getReply === 'function') {
+          reply = window.AIAssistant.getReply(text);
+        } else {
+          reply = '🤖 Modul AI Asisten sedang menginisialisasi engine komputasi. Silakan ulangi beberapa saat lagi.';
+        }
+        appendMessage('bot', reply);
+      } catch (err) {
+        console.error('Bot response error:', err);
+        removeTypingIndicator();
+        appendMessage('bot', `⚠️ Maaf, terjadi kesalahan saat memproses jawaban: ${err.message}. Silakan coba pertanyaan lain.`);
+      }
     }, 450);
   }
 

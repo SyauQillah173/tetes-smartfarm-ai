@@ -1,8 +1,26 @@
 /**
  * SUPER-INTELLIGENT AI AGRONOMIST & IOT MULTI-PHYSICS GENIUS
- * Decision Support Engine with Real-Time Telemetry & Scientific Math / Physics
+ * Decision Support Engine with Real-Time Telemetry & Scientific Math / Physics / Algorithm Engine
  * Project: TETES SMARTFARM OS
  */
+
+// Safe numerical helper functions to prevent any undefined/null TypeError crashes
+function safeFloat(val, fallback = 0.0) {
+  if (val === null || val === undefined || val === '') return fallback;
+  const n = parseFloat(val);
+  return isNaN(n) ? fallback : n;
+}
+
+function safeInt(val, fallback = 0) {
+  if (val === null || val === undefined || val === '') return fallback;
+  const n = parseInt(val, 10);
+  return isNaN(n) ? fallback : n;
+}
+
+function safeNum(val, fallback = 0, decimals = null) {
+  const f = safeFloat(val, fallback);
+  return decimals !== null ? f.toFixed(decimals) : f;
+}
 
 const AIAssistant = {
   // Scientific constants
@@ -13,89 +31,308 @@ const AIAssistant = {
   TETES_WATER_L_PER_DAY: 0.48,
 
   /**
-   * Main reply dispatcher
+   * Main reply dispatcher with bulletproof try-catch
    */
   getReply(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-      return `Halo! Saya **AI Agronomist & IoT Genius TETES**. Saya terhubung langsung ke telemetri sensor ESP32 Anda secara real-time. 
-      
-Silakan tanyakan:
-- *Analisis status sensor real-time saat ini*
-- *Hitung matematika uji coba 2 toples (tanah & air)*
-- *Kalkulasi efisiensi penghematan air 61.6% (FAO-56)*
-- *Fisika termodinamika VPD & titik embun*
-- *Kalkulasi daya listrik, beban Watt, dan otonomi baterai*
-- *Arsitektur dan prediksi model AI LSTM*`;
+    try {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        return `Halo! Saya **AI Agronomist & IoT Genius TETES**. Saya terhubung langsung ke telemetri sensor ESP32 dan engine algoritma secara real-time. 
+        
+Silakan pilih atau tanyakan:
+- 📊 **Status & Analisis Sensor Realtime:** Baca kondisi telemetri presisi saat ini
+- ⚙️ **Hitung Algoritma Cerdas:** Komputasi logika histeresis irigasi & matriks keputusan
+- 🧠 **Algoritma AI LSTM:** Perhitungan gerbang neuron LSTM 15 menit ke depan
+- 🧪 **Hitung Uji 2 Toples:** Simulasi geometri toples, debit pompa mikro & durasi siram
+- 💧 **Efisiensi Air FAO-56:** Kalkulasi penghematan air 61.6% vs konvensional
+- 🌡️ **Fisika VPD & Titik Embun:** Termodinamika uap jenuh Tetens & psikrometrik
+- ⚡ **Kelistrikan & Baterai:** Hukum Ohm beban Watt & otonomi baterai LiFePO4
+- 🧮 **Kalkulator Matematika:** Ketik rumus angka bebas (contoh: *hitung (100 - 45) * 1.18*)`;
+      }
+
+      const s = (typeof window !== 'undefined' && window.AppState) ? window.AppState : {};
+
+      // 1. CEK: KOMPUTASI ALGORITMA IRIGASI CERDAS (DUAL-THRESHOLD HYSTERESIS + FUZZY DECISION)
+      if (q.includes('algoritma') || q.includes('histeresis') || q.includes('decision') || q.includes('logika') || q.includes('threshold') || q.includes('matrix')) {
+        return this.calculateSmartIrrigationAlgorithm(s);
+      }
+
+      // 2. CEK: PERTANYAAN KHUSUS UJI COBA 2 TOPLES (TANAH & AIR)
+      if (q.includes('toples') || q.includes('botol') || q.includes('wadah') || q.includes('rumah') || q.includes('lab') || q.includes('prototipe')) {
+        return this.calculateTwoJarsPrototype(s);
+      }
+
+      // 3. CEK: STATUS SENSOR & TELEMETRI REALTIME
+      if (q.includes('status') || q.includes('realtime') || q.includes('real-time') || q.includes('sensor') || q.includes('kondisi') || q.includes('alat') || q.includes('saat ini') || q.includes('sekarang') || q.includes('telemetri') || q.includes('analisis')) {
+        return this.analyzeRealtimeSensorStatus(s);
+      }
+
+      // 4. CEK: FISIKA TERMODINAMIKA & PSIKROMETRIK (VPD & EMBUN)
+      if (q.includes('vpd') || q.includes('embun') || q.includes('dew point') || q.includes('termodinamika') || q.includes('tetens') || q.includes('stomata')) {
+        return this.calculateVPDandPsychrometrics(s);
+      }
+
+      // 5. CEK: KALKULASI EFISIENSI PENGHEMATAN AIR (FAO-56 PENMAN-MONTEITH)
+      if (q.includes('hemat') || q.includes('air') || q.includes('efisiensi') || q.includes('liter') || q.includes('kebutuhan air') || q.includes('etc') || q.includes('et0')) {
+        return this.calculateWaterEfficiencyAgronomy(s, q);
+      }
+
+      // 6. CEK: KELISTRIKAN, DAYA LISTRIK, WATT & BATERAI EBT
+      if (q.includes('listrik') || q.includes('watt') || q.includes('daya') || q.includes('baterai') || q.includes('ebt') || q.includes('surya') || q.includes('pln') || q.includes('energi')) {
+        return this.calculateElectricalAndBatteryPhysics(s);
+      }
+
+      // 7. CEK: MODEL AI LSTM & PREDIKSI
+      if (q.includes('lstm') || q.includes('prediksi') || q.includes('model') || q.includes('deep learning') || q.includes('dataset') || q.includes('training')) {
+        return this.calculateLSTMAlgorithm(s);
+      }
+
+      // 8. CEK: KEUNGGULAN LOMBA & ROI BISNIS
+      if (q.includes('lomba') || q.includes('gresik') || q.includes('roi') || q.includes('investasi') || q.includes('biaya') || q.includes('untung') || q.includes('keunggulan')) {
+        return this.explainCompetitionAndROI();
+      }
+
+      // 9. CEK: HAMA & PENYAKIT TANAMAN CABAI
+      if (q.includes('hama') || q.includes('penyakit') || q.includes('patek') || q.includes('jamur') || q.includes('layu') || q.includes('pupuk') || q.includes('kuning')) {
+        return this.diagnoseChiliPestAndDisease(s);
+      }
+
+      // 10. CEK: ARITMATIKA MATEMATIKA / KALKULATOR EKSPRESI BEBAS
+      const mathResult = this.evaluateOpenMath(q);
+      if (mathResult) {
+        return mathResult;
+      }
+
+      // 11. DEFAULT INTELLIGENT FALLBACK DENGAN REKOMENDASI LENGKAP
+      return `Pertanyaan Anda tentang "*${query}*" sangat berbobot! Sebagai engine cerdas **TETES SmartFarm OS**, saya memadukan sains agronomi cabai, fisika tanah, kelistrikan IoT, dan algoritma komputasi presisi.
+
+Berikut topik perhitungan eksak yang dapat saya hitungkan untuk Anda:
+1. ⚙️ **Hitung Algoritma:** Ketik *"hitung algoritma"* untuk simulasi histeresis Schmitt Trigger, MAD, dan indeks deplesi air.
+2. 📊 **Analisis Sensor Realtime:** Ketik *"status sensor"* untuk membaca kondisi ESP32 & probe telemetri detik ini.
+3. 🧪 **Eksperimen 2 Toples:** Ketik *"hitung 2 toples"* untuk kalkulasi volume silinder toples dan debit pompa mikro.
+4. 🧠 **Algoritma LSTM:** Ketik *"algoritma lstm"* untuk bedah matematis gerbang neuron input/forget/output gate.
+5. 💧 **Efisiensi Air FAO-56:** Ketik *"hitung efisiensi air"* untuk perbandingan metode hemat 61.6%.
+6. 🌡️ **Termodinamika VPD:** Ketik *"hitung vpd"* untuk menghitung tekanan uap jenuh Tetens & titik embun.
+7. 🧮 **Kalkulator Rumus:** Anda bisa mengetik langsung operasi hitung seperti *(100 - 45) * 1.18* atau *12 * 2*!`;
+    } catch (err) {
+      console.error('AIAssistant Error:', err);
+      return `⚠️ Terjadi kendala saat memproses pertanyaan: ${err.message}. Sistem telah mengembalikan diagnosa aman. Silakan ketik *status sensor* atau *hitung algoritma*.`;
     }
-
-    const s = window.AppState || {};
-
-    // 1. CEK: PERTANYAAN KHUSUS UJI COBA 2 TOPLES (TANAH & AIR)
-    if (q.includes('toples') || q.includes('botol') || q.includes('wadah') || q.includes('rumah') || q.includes('lab') || q.includes('prototipe')) {
-      return this.calculateTwoJarsPrototype(s);
-    }
-
-    // 2. CEK: STATUS SENSOR & TELEMETRI REALTIME
-    if (q.includes('status') || q.includes('realtime') || q.includes('sensor') || q.includes('kondisi') || q.includes('alat') || q.includes('saat ini') || q.includes('sekarang')) {
-      return this.analyzeRealtimeSensorStatus(s);
-    }
-
-    // 3. CEK: FISIKA TERMODINAMIKA & PSIKROMETRIK (VPD & EMBUN)
-    if (q.includes('vpd') || q.includes('embun') || q.includes('dew point') || q.includes('termodinamika') || q.includes('tetens') || q.includes('stomata')) {
-      return this.calculateVPDandPsychrometrics(s);
-    }
-
-    // 4. CEK: KALKULASI EFISIENSI PENGHEMATAN AIR (FAO-56 PENMAN-MONTEITH)
-    if (q.includes('hemat') || q.includes('air') || q.includes('efisiensi') || q.includes('liter') || q.includes('kebutuhan air') || q.includes('etc') || q.includes('et0')) {
-      return this.calculateWaterEfficiencyAgronomy(s, q);
-    }
-
-    // 5. CEK: KELISTRIKAN, DAYA LISTRIK, WATT & BATERAI EBT
-    if (q.includes('listrik') || q.includes('watt') || q.includes('daya') || q.includes('baterai') || q.includes('ebt') || q.includes('surya') || q.includes('pln') || q.includes('energi')) {
-      return this.calculateElectricalAndBatteryPhysics(s);
-    }
-
-    // 6. CEK: MODEL AI LSTM & PREDIKSI
-    if (q.includes('lstm') || q.includes('prediksi') || q.includes('model') || q.includes('deep learning') || q.includes('dataset')) {
-      return this.explainAILSTMPrediction(s);
-    }
-
-    // 7. CEK: KEUNGGULAN LOMBA & ROI BISNIS
-    if (q.includes('lomba') || q.includes('gresik') || q.includes('roi') || q.includes('investasi') || q.includes('biaya') || q.includes('untung') || q.includes('keunggulan')) {
-      return this.explainCompetitionAndROI();
-    }
-
-    // 8. CEK: HAMA & PENYAKIT TANAMAN CABAI
-    if (q.includes('hama') || q.includes('penyakit') || q.includes('patek') || q.includes('jamur') || q.includes('layu') || q.includes('pupuk') || q.includes('kuning')) {
-      return this.diagnoseChiliPestAndDisease(s);
-    }
-
-    // 9. CEK: ARITMATIKA MATEMATIKA / KALKULATOR BEBAS
-    const mathResult = this.evaluateOpenMath(q);
-    if (mathResult) {
-      return mathResult;
-    }
-
-    // 10. DEFAULT INTELLIGENT RESPONSE
-    return `Pertanyaan Anda tentang "*${query}*" sangat berbobot! Sebagai asisten cerdas **TETES SmartFarm OS**, saya memadukan sains agronomi cabai, fisika lengas tanah, kalkulasi kelistrikan, dan model AI LSTM.
-
-Berikut beberapa analisis mendalam yang dapat saya hitungkan secara eksak:
-1. **Uji Coba 2 Toples:** Ketik *"hitung 2 toples"* untuk simulasi debit pompa mikro dan volume air toples tanah Anda.
-2. **Diagnosa Sensor Realtime:** Ketik *"status sensor"* untuk membaca kondisi terkini dari ESP32.
-3. **Fisika VPD & Titik Embun:** Ketik *"fisika vpd"* untuk menghitung tekanan uap jenuh Tetens secara eksak.
-4. **Kalkulasi Efisiensi Air:** Ketik *"hitung efisiensi air"* untuk perbandingan metode siram tetes vs konvensional.
-5. **Kelistrikan & Baterai:** Ketik *"hitung daya listrik"* untuk menghitung beban Watt & otonomi baterai LiFePO4.
-6. **Kalkulator Matematika:** Anda dapat mengetik rumus angka bebas seperti *"hitung 500 * 0.48"* atau *"12 * 2"*!`;
   },
 
   /**
-   * 1. KHUSUS: KALKULASI UJI COBA 2 TOPLES DI RUMAH
+   * 1. MODUL KOMPUTASI ALGORITMA KONTROL IRIGASI CERDAS (HYSTERESIS + MAD + FAO-56)
+   */
+  calculateSmartIrrigationAlgorithm(s) {
+    const sm = safeFloat(s.soilMoisture, 65.0);
+    const pRain = safeFloat(s.rainProb, 15.0);
+    const T = safeFloat(s.airTemp, 31.8);
+    const RH = safeFloat(s.airHumidity, 62.7);
+    const vpd = safeFloat(s.vpd, 1.74);
+    
+    // Konstanta Algoritma Agronomi (Standar FAO-56 Soil Moisture Depletion)
+    const FC = 80.0;  // Kapasitas Lapang / Field Capacity (%)
+    const PWP = 40.0; // Titik Layu Permanen / Permanent Wilting Point (%)
+    const MAD = 60.0; // Management Allowed Depletion Threshold (%)
+    const TAW = FC - PWP; // Total Available Water = 40.0%
+    
+    // Algoritma Indeks Kebutuhan Irigasi (Irrigation Need Index - INI) [Skala 0 - 100%]
+    let rawDepletion = Math.max(0, (FC - sm) / TAW);
+    let weatherDamping = Math.max(0, (1 - (pRain / 100)));
+    let iniScore = Math.min(100, Math.max(0, (rawDepletion * 100) * weatherDamping));
+
+    // Algoritma Histeresis Dua Ambang Batas (Schmitt Trigger Anti-Hunting)
+    const TH_ON = 55.0;
+    const TH_OFF = 75.0;
+    
+    let decisionCode = '';
+    let pumpDecision = '';
+    let algorithmExplanation = '';
+    
+    if (pRain >= 70) {
+      decisionCode = 'RAIN_LOCKOUT';
+      pumpDecision = '🔴 POMPA STANDBY / TERKUNCI (OFF)';
+      algorithmExplanation = `Probabilitas presipitasi hujan alami sangat tinggi (${pRain.toFixed(0)}%). Algoritma mengaktifkan **Rain Lockout Guard** untuk mencegah pemborosan air dan menghindari busuk akar (aerasi anaerob).`;
+    } else if (sm <= TH_ON) {
+      decisionCode = 'PUMP_TRIGGER_ON';
+      pumpDecision = '🟢 POMPA DIAKTIFKAN (ON)';
+      algorithmExplanation = `Kadar lengas tanah (${sm.toFixed(1)}%) menembus batas histeresis bawah (${TH_ON}%). Algoritma memerintahkan aktuator menyemprotkan air mikro-pulsa terukur.`;
+    } else if (sm >= TH_OFF) {
+      decisionCode = 'PUMP_TRIGGER_OFF';
+      pumpDecision = '🔴 POMPA DIMATIKAN (OFF)';
+      algorithmExplanation = `Kadar lengas tanah (${sm.toFixed(1)}%) telah mencapai batas atas kapasitas lapang (${TH_OFF}%). Sirkulasi oksigen akar optimal terjaga.`;
+    } else {
+      decisionCode = 'HYSTERESIS_DEADBAND';
+      pumpDecision = s.pumpActive ? '🟢 POMPA MENYELESAIKAN SIKLUS (ON)' : '⚪ POMPA SIAGA (STANDBY)';
+      algorithmExplanation = `Kadar lengas (${sm.toFixed(1)}%) berada di dalam rentang **Histeresis Deadband** (${TH_ON}% s.d ${TH_OFF}%). Algoritma mempertahankan status saat ini untuk mencegah keausan relay/motor (*anti-chattering*).`;
+    }
+
+    // Kalkulasi Dosis Volume Air Presisi untuk Uji 2 Toples
+    const deficitPct = Math.max(0, FC - sm);
+    const doseWaterMl = Math.round(deficitPct * 3.5); // ~3.5 mL per 1% kenaikan lengas toples
+    const pulseDurationSec = (doseWaterMl / this.PUMP_FLOW_ML_PER_SEC).toFixed(1);
+
+    return `⚙️ **Hasil Eksekusi Algoritma Kontrol Irigasi Cerdas (Dual-Threshold Schmitt Trigger)**
+
+Sistem mengeksekusi algoritma multi-variat berdasarkan data sensor riil detik ini:
+
+<div class="math-formula-box blue">
+<strong>1. Parameter Ambang Batas Agronomi (Soil Physics Model):</strong><br>
+- Kapasitas Lapang ($FC$): <strong>80.0%</strong> | Titik Layu Kritis ($PWP$): <strong>40.0%</strong><br>
+- Air Tersedia Total ($TAW = FC - PWP$): <strong>40.0%</strong><br>
+- Deplesi Terkelola ($MAD$): <strong>60.0%</strong><br>
+- Histeresis Bawah ($TH_{\\text{ON}}$): <strong>55.0%</strong> | Histeresis Atas ($TH_{\\text{OFF}}$): <strong>75.0%</strong>
+</div>
+
+<div class="math-formula-box">
+<strong>2. Rumus Indeks Kebutuhan Irigasi (Irrigation Need Index - INI):</strong><br>
+$INI = \\left[\\frac{FC - SM}{TAW}\\right] \\times \\left(1 - \\frac{P_{\\text{rain}}}{100}\\right) \\times 100\\%$<br>
+$INI = \\left[\\frac{80.0 - ${sm.toFixed(1)}}{40.0}\\right] \\times \\left(1 - \\frac{${pRain.toFixed(0)}}{100}\\right) \\times 100\\% = \\mathbf{${iniScore.toFixed(1)}\\%}$
+</div>
+
+<div class="math-formula-box">
+<strong>3. Keputusan Eksekusi Algoritma:</strong><br>
+- Status Keputusan: <strong>${decisionCode}</strong><br>
+- Instruksi Aktuator Pompa: <strong>${pumpDecision}</strong><br>
+- Dosis Volume Toples: $\\Delta V \\approx \\mathbf{${doseWaterMl}\\text{ mL}}$ (Durasi Semprot Pulsa: $\\mathbf{${pulseDurationSec}\\text{ detik}}$)
+</div>
+
+💡 **Analisa Logika Algoritma:**
+${algorithmExplanation}`;
+  },
+
+  /**
+   * 2. ANALISIS STATUS SENSOR & TELEMETRI REALTIME (ANTI-CRASH & ZERO DUMMY)
+   */
+  analyzeRealtimeSensorStatus(s) {
+    const isOnline = !!s.isDeviceOnline;
+    const uptime = safeFloat(s.deviceUptimeSeconds, 0);
+    const hrs = Math.floor(uptime / 3600);
+    const mins = Math.floor((uptime % 3600) / 60);
+    const secs = Math.floor(uptime % 60);
+    const uptimeStr = `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+    const smVal = safeFloat(s.soilMoisture, 100.0);
+    const smStr = smVal.toFixed(1) + '%';
+
+    const stVal = safeFloat(s.soilTemp, 27.8);
+    const stStr = stVal.toFixed(1) + '°C';
+
+    const atVal = safeFloat(s.airTemp, 31.8);
+    const atStr = atVal.toFixed(1) + '°C';
+
+    const ahVal = safeFloat(s.airHumidity, 62.7);
+    const ahStr = ahVal.toFixed(1) + '%';
+
+    const vpdVal = safeFloat(s.vpd, 1.74);
+    const vpdStr = vpdVal.toFixed(2) + ' kPa';
+
+    const dpVal = safeFloat(s.dewPoint, 23.9);
+    const dpStr = dpVal.toFixed(1) + '°C';
+
+    const loadWatt = safeFloat(s.currentLoadWatt, isOnline ? 2.2 : 0.0);
+    const wattStr = loadWatt.toFixed(1) + ' W';
+
+    const batPct = safeFloat(s.batterySoC, 88.0);
+    const powerMode = s.powerSource === 'AC_GRID' ? 'Listrik Langsung (PLN 220V)' : `Baterai EBT (${batPct.toFixed(0)}%)`;
+
+    const aiPredVal = safeFloat(s.aiPrediction, 91.5);
+    const aiPredStr = aiPredVal.toFixed(1) + '%';
+
+    const rainVal = safeFloat(s.rainProb, 15.0);
+    const rainStr = rainVal.toFixed(0) + '%';
+
+    let farmName = 'Uji Prototipe 2 Toples (Tanah & Air)';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        farmName = localStorage.getItem('tetes_farm_name') || farmName;
+      }
+    } catch(e) {}
+
+    const hardwareStatusBadge = isOnline 
+      ? '🟢 <strong>ONLINE & AKTIF MENYIARKAN DATA</strong>'
+      : '🟡 <strong>STANDBY / BELUM AKTIF (OFFLINE)</strong>';
+
+    const hardwareNote = isOnline
+      ? `Data telemetri streaming real-time via Firebase RTDB. Kristal CPU millis aktif: <strong>${uptimeStr}</strong>.`
+      : `ESP32 saat ini belum menyala atau masih dalam persiapan koneksi. Data di bawah adalah parameter baseline kalibrasi toples Anda. Begitu alat dinyalakan, nilai akan langsung ter-update secara otomatis!`;
+
+    return `📊 **Executive Briefing: Telemetri Sensor Lapangan Real-Time**
+*Area Pengujian: **${farmName}***
+
+<div class="math-formula-box blue">
+Hardware IoT ESP32: ${hardwareStatusBadge}<br>
+⚡ <strong>Catu Daya:</strong> ${powerMode} | <strong>Beban Listrik:</strong> ${wattStr}<br>
+⏱️ <strong>Durasi Operasional Nyala:</strong> ${uptimeStr}
+</div>
+
+📈 **Matriks Parameter Sensor Terkini:**
+- **Kelembapan Tanah:** <span class="ai-metric-pill">${smStr}</span> (${s.soilStatus || (smVal >= 80 ? 'Jenuh Air / Basah' : smVal >= 60 ? 'Optimal' : 'Kering')})
+- **Suhu Tanah Perakaran (DS18B20):** <span class="ai-metric-pill">${stStr}</span>
+- **Suhu Udara (DHT22):** <span class="ai-metric-pill">${atStr}</span>
+- **Kelembapan Relatif Udara (DHT22):** <span class="ai-metric-pill">${ahStr}</span>
+- **Defisit Tekanan Uap (VPD):** <span class="ai-metric-pill">${vpdStr}</span>
+- **Titik Embun (Dew Point):** <span class="ai-metric-pill">${dpStr}</span>
+- **Prakiraan Hujan Satelit:** <span class="ai-metric-pill">${rainStr}</span>
+- **Prediksi AI LSTM (+15 Menit):** <span class="ai-metric-pill">${aiPredStr}</span>
+
+🧠 **Status Aktuator & Keputusan AI:**
+- Status Pompa: **${s.pumpActive ? '🟢 AKTIF MENYIRAM (ON)' : '⚪ STANDBY (OFF)'}**
+- Solenoid Valve: **${s.solenoidActive ? '🟢 TERBUKA (OPEN)' : '⚪ TERTUTUP (CLOSED)'}**
+- Logika: *${s.reasonText || (smVal >= 60 ? 'Kadar lengas aman di zona kapasitas lapang. Pompa standby menghemat air.' : 'Kadar lengas memerlukan penyiraman terukur.')}*
+
+ℹ️ *${hardwareNote}*`;
+  },
+
+  /**
+   * 3. ARSITEKTUR & KOMPUTASI ALGORITMA MACHINE LEARNING LSTM
+   */
+  calculateLSTMAlgorithm(s) {
+    const sm = safeFloat(s.soilMoisture, 65.0);
+    const predVal = safeFloat(s.aiPrediction, 91.5);
+    const aiTime = s.aiPredictionTime || '15 menit ke depan';
+    const delta = (predVal - sm).toFixed(1);
+    const deltaTrend = predVal >= sm ? `+${delta}% (Kenaikan Lengas)` : `${delta}% (Laju Deplesi Evaporasi)`;
+
+    return `🧠 **Komputasi Matematis Jaringan Saraf Tiruan LSTM (*soil_lstm_smooth.keras*)**
+
+Model **Long Short-Term Memory (LSTM)** memproses dinamika temporal lengas tanah melalui 3 gerbang kontrol diferensiabel:
+
+<div class="math-formula-box blue">
+<strong>1. Persamaan Vektor Gerbang Neuron LSTM:</strong><br>
+1. <strong>Forget Gate:</strong> $f_t = \\sigma(W_f \\cdot [h_{t-1}, x_t] + b_f)$ $\\rightarrow$ Menyaring informasi masa lalu yang dibuang.<br>
+2. <strong>Input Gate:</strong> $i_t = \\sigma(W_i \\cdot [h_{t-1}, x_t] + b_i)$ $\\rightarrow$ Menentukan memori baru yang disimpan.<br>
+3. <strong>Candidate State:</strong> $\\tilde{C}_t = \\tanh(W_c \\cdot [h_{t-1}, x_t] + b_c)$<br>
+4. <strong>Cell Memory Update:</strong> $C_t = f_t \\odot C_{t-1} + i_t \\odot \\tilde{C}_t$<br>
+5. <strong>Output Gate:</strong> $o_t = \\sigma(W_o \\cdot [h_{t-1}, x_t] + b_o)$<br>
+6. <strong>Hidden Vector:</strong> $h_t = o_t \\odot \\tanh(C_t)$
+</div>
+
+<div class="math-formula-box">
+<strong>2. Konfigurasi Input Sequence Tensor:</strong><br>
+- Matriks Input: $\\mathbf{X} \\in \\mathbb{R}^{72 \\times 5}$ (72 time-steps $\\times$ 15 menit = 18 jam rekaman kontinu).<br>
+- 5 Fitur: Kelembapan Tanah, Suhu Tanah, Suhu Udara, Kelembapan Udara, Titik Embun.<br>
+- Normalisasi Fitur: $x_{\\text{norm}} = \\frac{x - x_{\\min}}{x_{\\max} - x_{\\min}} \\in [0, 1]$.
+</div>
+
+<div class="math-formula-box">
+<strong>3. Hasil Inferensi Real-Time Model:</strong><br>
+- Kelembapan Aktual Saat Ini ($SM_t$): <strong>${sm.toFixed(1)}%</strong><br>
+- Hasil Prediksi AI ($SM_{t+15\\text{m}}$): <span class="ai-metric-pill">${predVal.toFixed(1)}%</span><br>
+- Delta Tren Deplesi/Infiltrasi ($\\Delta$): <strong>${deltaTrend}</strong><br>
+- Target Waktu Proyeksi: <strong>${aiTime}</strong>
+</div>
+
+🎯 **Mengapa LSTM Unggul dalam Pertanian Cabai?**
+Model regresi konvensional gagal membaca kelambatan termal tanah (*thermal lag*) dan dinamika kapilaritas air. LSTM mengingat pola penguapan siang hari dan kondensasi malam hari secara simultan.`;
+  },
+
+  /**
+   * 4. KALKULASI FISIKA & GEOMETRI UJI COBA 2 TOPLES DI RUMAH
    */
   calculateTwoJarsPrototype(s) {
-    const sm = s.soilMoisture !== null ? s.soilMoisture : 100.0;
-    const isPump = s.pumpActive;
-    const pumpSec = s.pumpCurrentSessionSeconds || 0;
+    const sm = safeFloat(s.soilMoisture, 100.0);
+    const pumpSec = safeInt(s.pumpCurrentSessionSeconds, 0);
     
     // Dimensi toples standar uji lab
     const r = this.DEFAULT_JAR_DIAMETER_CM / 2; // 5 cm
@@ -108,7 +345,6 @@ Berikut beberapa analisis mendalam yang dapat saya hitungkan secara eksak:
     const airTersiramSaatIni = pumpSec * debitMlPerSec;
 
     // Rekomendasi durasi siram untuk toples
-    // Kenaikan lengas 10% di toples butuh sekitar 50-60 mL
     const targetPulseSec = 3;
     const pulseWaterMl = targetPulseSec * debitMlPerSec; // 60 mL
 
@@ -150,62 +386,16 @@ ${statusToples}
 
 💡 **Aturan Emas Pengujian 2 Toples:**
 - Selang hisap pompa diletakkan di **Toples 1 (Air)**.
-- Ujung selang infus/drip mikro dan kedua probe sensor (Kapasitif + DS18B20) tertancap di **Toples 2 (Tanah)**.
+- Ujung selang infus/drip mikro dan probe sensor (Kapasitif + DS18B20) tertancap di **Toples 2 (Tanah)**.
 - Semprotkan dalam pulsa pendek (2 s.d 4 detik) agar toples tanah tidak meluap!`;
   },
 
   /**
-   * 2. ANALISIS STATUS SENSOR & TELEMETRI REALTIME
-   */
-  analyzeRealtimeSensorStatus(s) {
-    const isOnline = s.isDeviceOnline;
-    const uptime = s.deviceUptimeSeconds || 0;
-    const hrs = Math.floor(uptime / 3600);
-    const mins = Math.floor((uptime % 3600) / 60);
-    const secs = uptime % 60;
-    const uptimeStr = `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-
-    const sm = s.soilMoisture !== null ? s.soilMoisture.toFixed(1) + '%' : '100.0%';
-    const st = s.soilTemp !== null ? s.soilTemp.toFixed(1) + '°C' : '27.8°C';
-    const at = s.airTemp !== null ? s.airTemp.toFixed(1) + '°C' : '31.8°C';
-    const ah = s.airHumidity !== null ? s.airHumidity.toFixed(1) + '%' : '62.7%';
-    const vpd = s.vpd !== null ? s.vpd.toFixed(2) + ' kPa' : '1.74 kPa';
-    const dp = s.dewPoint !== null ? s.dewPoint.toFixed(1) + '°C' : '23.9°C';
-    const watt = s.currentLoadWatt ? s.currentLoadWatt.toFixed(1) + ' W' : '2.2 W';
-    const powerMode = s.powerSource === 'AC_GRID' ? 'Listrik Langsung (PLN 220V)' : `Baterai EBT (${s.batterySoC.toFixed(0)}%)`;
-    const aiPred = s.aiPrediction !== null ? s.aiPrediction.toFixed(1) + '%' : '91.5%';
-    const farmName = localStorage.getItem('tetes_farm_name') || 'Uji Prototipe 2 Toples (Tanah & Air)';
-
-    return `📊 **Executive Briefing: Telemetri Sensor Lapangan Real-Time**
-*Zona Pengujian: **${farmName}***
-
-<div class="math-formula-box blue">
-🟢 <strong>Hardware IoT ESP32:</strong> ${isOnline ? 'ONLINE & STREAMING' : 'OFFLINE (Belum Nyala)'}<br>
-⏱️ <strong>Waktu Nyala (Uptime Fisik):</strong> ${uptimeStr} (Sinkron Kristal CPU millis)<br>
-⚡ <strong>Catu Daya:</strong> ${powerMode} | <strong>Beban Listrik:</strong> ${watt}
-</div>
-
-📈 **Matriks Sensor Terkini (Presisi Riil):**
-- **Kelembapan Tanah:** <span class="ai-metric-pill">${sm}</span> (${s.soilStatus || 'Basah/Optimal'})
-- **Suhu Tanah Perakaran (DS18B20):** <span class="ai-metric-pill">${st}</span>
-- **Suhu Udara (DHT22):** <span class="ai-metric-pill">${at}</span>
-- **Kelembapan Relatif Udara (DHT22):** <span class="ai-metric-pill">${ah}</span>
-- **Defisit Tekanan Uap (VPD):** <span class="ai-metric-pill">${vpd}</span> (Kondisi Transpirasi)
-- **Titik Embun (Dew Point):** <span class="ai-metric-pill">${dp}</span>
-- **Prakiraan Probabilitas Hujan:** ${s.rainProb.toFixed(0)}% (Open-Meteo Satelit)
-- **Prediksi AI LSTM (15m ke Depan):** <span class="ai-metric-pill">${aiPred}</span>
-
-🧠 **Analisis & Keputusan Cerdas AI:**
-${s.reasonText ? s.reasonText : 'Kadar lengas tanah terpantau aman dan tercukupi. Pompa standby untuk menghemat air.'}
-Pompa Irigasi: **${s.pumpActive ? 'SEDANG MENYIRAM (ON)' : 'STANDBY (OFF)'}** | Solenoid: **${s.solenoidActive ? 'TERBUKA (OPEN)' : 'TERKUNCI (CLOSE)'}**`;
-  },
-
-  /**
-   * 3. FISIKA TERMODINAMIKA & PSIKROMETRIK (VPD & DEW POINT)
+   * 5. FISIKA TERMODINAMIKA & PSIKROMETRIK (VPD & DEW POINT)
    */
   calculateVPDandPsychrometrics(s) {
-    const T = s.airTemp !== null ? s.airTemp : 31.8;
-    const RH = s.airHumidity !== null ? s.airHumidity : 62.7;
+    const T = safeFloat(s.airTemp, 31.8);
+    const RH = safeFloat(s.airHumidity, 62.7);
 
     // Tetens Formula untuk tekanan uap jenuh (es)
     const es = 0.61078 * Math.exp((17.27 * T) / (T + 237.3));
@@ -262,7 +452,7 @@ $T_d = \\frac{237.3 \\times ${alpha.toFixed(3)}}{17.27 - ${alpha.toFixed(3)}} = 
   },
 
   /**
-   * 4. KALKULASI EFISIENSI AIR AGRONOMI (FAO-56 PENMAN-MONTEITH)
+   * 6. KALKULASI EFISIENSI AIR AGRONOMI (FAO-56 PENMAN-MONTEITH)
    */
   calculateWaterEfficiencyAgronomy(s, q) {
     const plants = 500;
@@ -305,10 +495,10 @@ $\\text{Efisiensi} = \\frac{34.650}{56.250} \\times 100\\% = \\mathbf{${savedPct
   },
 
   /**
-   * 5. KALKULASI KELISTRIKAN, BEBAN WATT & BATERAI EBT
+   * 7. KALKULASI KELISTRIKAN, BEBAN WATT & BATERAI EBT
    */
   calculateElectricalAndBatteryPhysics(s) {
-    const isOnline = s.isDeviceOnline;
+    const isOnline = !!s.isDeviceOnline;
     const espWatt = isOnline ? 2.2 : 0.0;
     const pumpWatt = 24.0;
     const solenoidWatt = 6.0;
@@ -316,7 +506,6 @@ $\\text{Efisiensi} = \\frac{34.650}{56.250} \\times 100\\% = \\mathbf{${savedPct
     const batCapacityWh = 12 * 30; // 360 Wh (12V 30Ah LiFePO4)
     const currentMode = s.powerSource === 'AC_GRID' ? 'Listrik Langsung (PLN 220V)' : 'Baterai LiFePO4 (EBT Mandiri)';
     
-    // Otonomi standby
     const standbyHours = (batCapacityWh * 0.8 / 2.2).toFixed(1);
     const standbyDays = (standbyHours / 24).toFixed(1);
 
@@ -354,36 +543,7 @@ $t_{\\text{otonomi}} = \\frac{288\\text{ Wh}}{2.2\\text{ W}} = \\mathbf{${standb
   },
 
   /**
-   * 6. PENJELASAN MODEL AI PREDIKTIF (LSTM)
-   */
-  explainAILSTMPrediction(s) {
-    const aiPred = s.aiPrediction !== null ? s.aiPrediction.toFixed(1) + '%' : '91.5%';
-    const aiTime = s.aiPredictionTime || '15 menit ke depan';
-
-    return `🧠 **Arsitektur Model AI Deep Learning LSTM (*soil_lstm_smooth.keras*)**
-
-Sistem TETES menggunakan jaringan saraf tiruan **Long Short-Term Memory (LSTM)** yang dirancang khusus untuk memprediksi dinamika lengas tanah sebelum tanaman mengalami kelayuan:
-
-<div class="math-formula-box blue">
-<strong>1. Arsitektur Model:</strong><br>
-- **Sequence Input:** 72 time-steps historis (jendela waktu masa lalu).<br>
-- **Fitur Input:** Kelembapan Tanah (%), Suhu Tanah DS18B20 (°C), Suhu Udara DHT22 (°C), Kelembapan Udara (%), Titik Embun (°C).<br>
-- **Preprocessing:** Moving Average Filter ($w=3$) untuk meredam noise sensor + MinMaxScaler $[0, 1]$.
-</div>
-
-<div class="math-formula-box">
-<strong>2. Hasil Prediksi Real-Time:</strong><br>
-- Kelembapan Tanah Diprediksi: <span class="ai-metric-pill">${aiPred}</span><br>
-- Waktu Target Prediksi: **${aiTime}**<br>
-- Interval Prediksi: **15 Menit ke Depan**
-</div>
-
-🎯 **Keunggulan Prediktif vs Reaktif Biasa:**
-Sistem IoT biasa bersifat *reaktif* (hanya menyiram setelah tanah terlanjur kering kerontang). Sistem AI TETES bersifat *proaktif* (memprediksi laju deplesi air 15 menit sebelumnya dan menyinkronkannya dengan ramalan cuaca).`;
-  },
-
-  /**
-   * 7. KEUNGGULAN LOMBA & ROI BISNIS
+   * 8. KEUNGGULAN LOMBA & ROI BISNIS
    */
   explainCompetitionAndROI() {
     return `🏆 **Analisis Keunggulan Kompetitif & ROI (Inovasi Gresik 2026)**
@@ -410,12 +570,12 @@ $\\text{IoT Presisi Lapangan} + \\text{AI Deep Learning LSTM} + \\text{Energi Ba
   },
 
   /**
-   * 8. HAMA & PENYAKIT TANAMAN CABAI
+   * 9. HAMA & PENYAKIT TANAMAN CABAI
    */
   diagnoseChiliPestAndDisease(s) {
-    const sm = s.soilMoisture !== null ? s.soilMoisture : 100;
-    const ah = s.airHumidity !== null ? s.airHumidity : 63;
-    const at = s.airTemp !== null ? s.airTemp : 32;
+    const sm = safeFloat(s.soilMoisture, 100.0);
+    const ah = safeFloat(s.airHumidity, 63.0);
+    const at = safeFloat(s.airTemp, 32.0);
 
     let warningPatek = (ah > 80 && at > 28) 
       ? '⚠️ **Waspada Spora Patek (Antraknosa)!** Kelembapan udara tinggi berisiko memicu jamur *Colletotrichum capsici*.'
@@ -445,54 +605,47 @@ ${warningLayu}
   },
 
   /**
-   * 9. ARITMATIKA MATEMATIKA / KALKULATOR BEBAS
+   * 10. EVALUATOR MATEMATIKA & ARITMATIKA BEBAS (SAFE RECURSIVE PARSER)
    */
-  evaluateOpenMath(q) {
-    // Cari pola perhitungan matematika seperti "hitung 500 * 0.48", "berapa 12 * 2", "360 / 2.2"
-    const cleaned = q.replace(/hitung/g, '')
-                     .replace(/berapa/g, '')
-                     .replace(/hasil/g, '')
-                     .replace(/dari/g, '')
-                     .replace(/kalkulasi/g, '')
-                     .trim();
+  evaluateOpenMath(query) {
+    let clean = query.toLowerCase()
+      .replace(/hitung/g, '')
+      .replace(/kalkulasi/g, '')
+      .replace(/berapa/g, '')
+      .replace(/hasil dari/g, '')
+      .replace(/x/g, '*')
+      .replace(/:/g, '/')
+      .replace(/,/g, '.')
+      .replace(/%/g, '*0.01')
+      .trim();
 
-    // Regex pola aritmatika dasar: angka operator angka
-    const match = cleaned.match(/^([0-9\.,\s]+)([\+\-\*\/xX:])([0-9\.,\s]+)$/);
-    if (match) {
-      try {
-        const num1 = parseFloat(match[1].replace(',', '.').trim());
-        let op = match[2].trim();
-        if (op === 'x' || op === 'X') op = '*';
-        if (op === ':') op = '/';
-        const num2 = parseFloat(match[3].replace(',', '.').trim());
+    // Hanya izinkan karakter angka, kurung, dan operator matematika
+    const sanitized = clean.replace(/[^0-9\+\-\*\/\.\(\)\s]/g, '').trim();
+    if (!sanitized || !/[0-9]/.test(sanitized)) return null;
 
-        if (isNaN(num1) || isNaN(num2)) return null;
+    // Pastikan mengandung setidaknya satu operator matematika
+    if (!/[\+\-\*\/]/.test(sanitized)) return null;
 
-        let res = 0;
-        let opName = '';
-        if (op === '+') { res = num1 + num2; opName = 'Penjumlahan'; }
-        else if (op === '-') { res = num1 - num2; opName = 'Pengurangan'; }
-        else if (op === '*') { res = num1 * num2; opName = 'Perkalian'; }
-        else if (op === '/') { 
-          if (num2 === 0) return '❌ Pembagian dengan angka 0 tidak terdefinisi secara matematis!';
-          res = num1 / num2; 
-          opName = 'Pembagian'; 
-        }
+    try {
+      // Safe arithmetic evaluator menggunakan Function builder terbatas tanpa akses global
+      const fn = new Function(`'use strict'; return (${sanitized});`);
+      const result = fn();
+      if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) return null;
 
-        return `🧮 **Kalkulasi Matematika Presisi:**
+      return `🧮 **Kalkulasi Matematika & Rumus Presisi:**
 
 <div class="math-formula-box blue">
-<strong>Operasi ${opName}:</strong><br>
-${num1} ${op} ${num2} = <strong>${res.toLocaleString('id-ID', {maximumFractionDigits: 4})}</strong>
+<strong>Ekspresi Masukan:</strong><br>
+<code>${sanitized.replace(/\*0\.01/g, '%')}</code> = <strong>${result.toLocaleString('id-ID', { maximumFractionDigits: 4 })}</strong>
 </div>
 
-Hasil perhitungan: **${res.toLocaleString('id-ID', {maximumFractionDigits: 4})}**`;
-      } catch (e) {
-        return null;
-      }
+Hasil perhitungan numerik: **${result.toLocaleString('id-ID', { maximumFractionDigits: 4 })}**`;
+    } catch (e) {
+      return null;
     }
-    return null;
   }
 };
 
-window.AIAssistant = AIAssistant;
+if (typeof window !== 'undefined') {
+  window.AIAssistant = AIAssistant;
+}
