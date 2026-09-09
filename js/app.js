@@ -111,25 +111,98 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ===================================================================
-   NAVIGATION TABS (SIDEBAR)
+   NAVIGATION TABS (DESKTOP & MOBILE ENTERPRISE DROPDOWN)
    =================================================================== */
-function initNavigationTabs() {
-  const tabs = document.querySelectorAll('.nav-item-btn');
+window.toggleMobileNav = function(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('mobileNavMenu');
+  const btn = document.getElementById('mobileNavBtn');
+  const chevron = document.getElementById('mobileNavChevron');
+  if (!menu) return;
+
+  const isOpen = menu.classList.contains('is-open');
+  if (isOpen) {
+    menu.classList.remove('is-open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  } else {
+    menu.classList.add('is-open');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+};
+
+window.closeMobileNav = function() {
+  const menu = document.getElementById('mobileNavMenu');
+  const btn = document.getElementById('mobileNavBtn');
+  const chevron = document.getElementById('mobileNavChevron');
+  if (menu && menu.classList.contains('is-open')) {
+    menu.classList.remove('is-open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  }
+};
+
+window.selectMobileTab = function(targetId) {
+  window.switchTab(targetId);
+  window.closeMobileNav();
+};
+
+window.switchTab = function(targetId) {
+  const desktopTabs = document.querySelectorAll('.sidebar-nav .nav-item-btn');
+  const mobileItems = document.querySelectorAll('.mobile-menu-item');
   const sections = document.querySelectorAll('.tab-content-container');
+
+  // 1. Sync Desktop Sidebar Tabs
+  desktopTabs.forEach(tab => {
+    if (tab.getAttribute('data-target') === targetId) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  // 2. Sync Mobile Menu Items & Trigger Label
+  mobileItems.forEach(item => {
+    if (item.getAttribute('data-target') === targetId) {
+      item.classList.add('active');
+      const icon = item.querySelector('.mobile-item-icon i')?.className || 'fas fa-gauge-high';
+      const title = item.querySelector('.mobile-item-title')?.textContent || 'Overview & Telemetri';
+      
+      const activeIcon = document.getElementById('mobileNavActiveIcon');
+      const activeText = document.getElementById('mobileNavActiveText');
+      if (activeIcon) activeIcon.className = icon;
+      if (activeText) activeText.textContent = title;
+    } else {
+      item.classList.remove('active');
+    }
+  });
+
+  // 3. Switch Content Viewport
+  sections.forEach(s => s.style.display = 'none');
+  const targetSection = document.getElementById(targetId);
+  if (targetSection) {
+    targetSection.style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+function initNavigationTabs() {
+  const tabs = document.querySelectorAll('.sidebar-nav .nav-item-btn');
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      sections.forEach(s => s.style.display = 'none');
-
-      tab.classList.add('active');
       const targetId = tab.getAttribute('data-target');
-      const targetSection = document.getElementById(targetId);
-      if (targetSection) {
-        targetSection.style.display = 'flex';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      window.switchTab(targetId);
     });
+  });
+
+  // Close mobile dropdown when tapping outside
+  document.addEventListener('click', (e) => {
+    const wrapper = document.querySelector('.mobile-nav-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      window.closeMobileNav();
+    }
   });
 
   // Enable seamless page scrolling even when mouse is positioned over the sidebar

@@ -454,8 +454,8 @@ canvas {
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
-  white-space: nowrap;
   display: block;
+  line-height: 1.35;
 }
 
 .header-tools {
@@ -1880,19 +1880,208 @@ input[type="text"], input[type="number"], select {
 }
 
 /* ===================================================================
+   MOBILE NAVIGATION DROPDOWN SYSTEM (INTERNATIONAL ENTERPRISE UX)
+   =================================================================== */
+.mobile-nav-wrapper {
+  display: none; /* Hidden on desktop (> 992px) */
+  position: relative;
+}
+
+.mobile-nav-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 9999px;
+  color: var(--tetes-navy);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+  min-width: 160px;
+  max-width: 200px;
+}
+
+.mobile-nav-trigger:active {
+  transform: scale(0.97);
+  background: var(--tetes-green-light);
+}
+
+.mobile-nav-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left;
+}
+
+.mobile-nav-trigger-left i {
+  color: var(--brand-primary);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.mobile-nav-trigger-left span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-chevron {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.mobile-nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(320px, 90vw);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid var(--border-medium);
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(11, 53, 94, 0.18), 0 4px 14px rgba(69, 169, 75, 0.08);
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 9999;
+  transform-origin: top right;
+  animation: mobileMenuIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-nav-dropdown-menu.is-open {
+  display: flex;
+}
+
+@keyframes mobileMenuIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.18s ease;
+  font-family: var(--font-sans);
+}
+
+.mobile-menu-item:hover, .mobile-menu-item:focus {
+  background: var(--tetes-green-light);
+  border-color: var(--tetes-green-border);
+}
+
+.mobile-menu-item.active {
+  background: linear-gradient(135deg, rgba(69, 169, 75, 0.12) 0%, rgba(27, 170, 240, 0.08) 100%);
+  border-color: var(--brand-border);
+}
+
+.mobile-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--brand-primary);
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(11, 53, 94, 0.05);
+}
+
+.mobile-menu-item.active .mobile-item-icon {
+  background: linear-gradient(135deg, var(--tetes-lime), var(--tetes-green));
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.mobile-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-item-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tetes-navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-item-sub {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-item-check {
+  font-size: 14px;
+  color: var(--brand-primary);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-menu-item.active .mobile-item-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ===================================================================
    RESPONSIVE DESIGN (FOR SMARTPHONES, TABLETS & PWA MOBILE INSTALL)
    =================================================================== */
 
 /* Tablet & Mobile Breakpoint (<= 992px) */
 @media (max-width: 992px) {
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .enterprise-container {
     flex-direction: column;
     min-height: 100vh;
     width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
   }
 
-  /* Fixed Desktop Sidebar becomes Top Mobile Header + Horizontal Pill Bar */
+  /* Fixed Desktop Sidebar becomes Top Mobile Sticky Header */
   .app-sidebar {
     width: 100%;
     height: auto;
@@ -1903,75 +2092,52 @@ input[type="text"], input[type="number"], select {
     border-right: none;
     border-bottom: 1.5px solid var(--border-subtle);
     z-index: 150;
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 4px 18px rgba(11, 53, 94, 0.08);
   }
 
   .sidebar-header {
-    padding: 10px 16px 6px;
+    padding: 10px 14px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     border-bottom: none;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sidebar-brand-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
   }
 
   .sidebar-brand-logo {
-    max-height: 36px;
+    max-height: 32px;
+    max-width: 120px;
+    object-fit: contain;
   }
 
   .sidebar-header-subtitle {
-    display: none; /* Keep mobile topbar clean */
+    display: none; /* Keep mobile topbar ultra clean */
   }
 
   .nav-section-title {
     display: none;
   }
 
-  /* Smooth Horizontal Scrollable Tab Pills for Mobile */
+  /* HIDE CLUMSY HORIZONTAL SCROLLBAR */
   .sidebar-nav {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 8px;
-    padding: 4px 16px 10px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: none !important;
   }
 
-  .sidebar-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-item-btn {
-    flex-shrink: 0;
-    width: auto;
-    white-space: nowrap;
-    padding: 7px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    border-radius: 9999px;
-    background: #ffffff;
-    border: 1.5px solid var(--border-medium);
-    color: var(--text-main);
-    box-shadow: 0 2px 6px rgba(11, 53, 94, 0.04);
-  }
-
-  .nav-item-btn.active {
-    background: linear-gradient(135deg, var(--tetes-lime), var(--tetes-green));
-    color: #ffffff;
-    border-color: transparent;
-    box-shadow: 0 4px 12px rgba(60, 168, 43, 0.35);
-  }
-
-  .nav-item-btn.active::before {
-    display: none;
-  }
-
-  .nav-item-btn.active i {
-    color: #ffffff;
+  /* SHOW SLEEK MOBILE DROPDOWN */
+  .mobile-nav-wrapper {
+    display: block !important;
   }
 
   .sidebar-footer {
@@ -1982,49 +2148,103 @@ input[type="text"], input[type="number"], select {
   .app-main {
     margin-left: 0;
     width: 100%;
+    max-width: 100vw;
     min-width: 0;
+    overflow-x: hidden;
   }
 
   .top-app-bar {
     position: relative;
     top: auto;
     height: auto;
-    padding: 10px 16px;
+    padding: 10px 12px;
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
-    background: rgba(255, 255, 255, 0.88);
+    background: rgba(255, 255, 255, 0.92);
     border-bottom: 1px solid var(--border-subtle);
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .location-selector {
     width: 100%;
-    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .location-badge {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    white-space: normal;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .location-subtext {
+    white-space: normal !important;
+    word-break: break-word;
+    font-size: 10px;
+    line-height: 1.35;
+    display: block;
+    max-width: 100%;
+    margin-top: 2px;
   }
 
   .header-tools {
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    box-sizing: border-box;
+  }
+
+  .quick-telemetry-chip {
+    font-size: 11px;
+    padding: 5px 8px;
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+  }
+
+  .header-tools .btn-enterprise {
+    font-size: 11px;
+    padding: 5px 8px;
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
   }
 
   .page-viewport {
-    padding: 14px 14px 40px;
-    gap: 16px;
+    padding: 12px 10px 40px;
+    gap: 14px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .layout-2col-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .pdf-hero-card {
     flex-direction: column;
-    padding: 22px 18px;
-    gap: 20px;
+    padding: 16px 14px;
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .pdf-hero-left {
@@ -2036,105 +2256,169 @@ input[type="text"], input[type="number"], select {
     align-items: center;
   }
 
-  .pdf-hero-benchmark {
+  .pdf-hero-right {
     width: 100%;
+  }
+
+  .ebt-scada-container {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pv-spec-row {
+    font-size: 12px;
+    padding: 4px 0;
   }
 }
 
 /* Smartphone Specific Screens (<= 640px) */
 @media (max-width: 640px) {
   .page-viewport {
-    padding: 10px 10px 36px;
+    padding: 8px 8px 36px;
+    gap: 12px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .pdf-brand-title {
-    font-size: 2rem;
+    font-size: 1.85rem;
   }
 
   .pdf-brand-subtitle {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
 
-  /* 2-Column Telemetry KPI Cards for Native App Feel */
+  /* 2-Column Telemetry KPI Cards */
   .kpi-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .kpi-card {
-    padding: 14px 12px;
-    border-radius: 18px;
+    padding: 12px 10px;
+    border-radius: 16px;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .kpi-title {
     font-size: 10px;
-    letter-spacing: 0.02em;
   }
 
   .kpi-icon-wrapper {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
   }
 
   .kpi-main-val {
-    font-size: 22px;
+    font-size: 19px;
   }
 
   .kpi-unit {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .kpi-footer-meta {
-    font-size: 9.5px;
+    font-size: 9px;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
-    padding-top: 8px;
+    gap: 3px;
+    padding-top: 6px;
+  }
+
+  /* Telemetry Metric Boxes: Strict 2x2 Grid with zero overflow */
+  .telemetry-row-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .scada-metric-box {
+    padding: 10px 8px;
+    border-radius: 12px;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .scada-metric-title {
+    font-size: 10.5px;
+  }
+
+  .scada-metric-val {
+    font-size: 17px;
+  }
+
+  .scada-metric-sub {
+    font-size: 9px;
+  }
+
+  /* Panels: No overflowing padding */
+  .enterprise-panel {
+    padding: 14px 10px;
+    border-radius: 16px;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .panel-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .section-pill-green, .section-pill-blue, .section-pill-navy {
+    font-size: 12px;
+    padding: 5px 14px;
+    max-width: 100%;
   }
 
   /* 2-Column 6-Step Workflow */
   .workflow-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
 
   .workflow-node {
-    padding: 12px 8px;
-    border-radius: 16px;
+    padding: 10px 6px;
+    border-radius: 14px;
   }
 
   .workflow-node-icon {
-    width: 44px;
-    height: 44px;
-    font-size: 18px;
-  }
-
-  .workflow-node-num {
-    width: 18px;
-    height: 18px;
-    font-size: 9.5px;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
   }
 
   .workflow-node-title {
-    font-size: 12px;
-    margin-top: 8px;
+    font-size: 11px;
   }
 
   .workflow-node-desc {
-    font-size: 10px;
-    line-height: 1.35;
+    font-size: 9.5px;
   }
 
-  /* Solar SCADA Container Stacks Full Width on Mobile */
+  /* Solar SCADA Container */
   .ebt-scada-container {
     grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 14px;
+    gap: 12px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .battery-scada-gauge {
-    padding-top: 12px;
+    padding-top: 10px;
     border-top: 1px solid var(--border-subtle);
   }
 
@@ -2146,12 +2430,8 @@ input[type="text"], input[type="number"], select {
   }
 
   .mode-tab-btn {
-    font-size: 11px;
-    padding: 8px 6px;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 10.5px;
+    padding: 8px 4px;
   }
 
   /* Actuator Control Cards */
@@ -2159,20 +2439,32 @@ input[type="text"], input[type="number"], select {
   .actuator-rack-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .actuator-card-unit,
   .actuator-card {
-    padding: 14px;
+    padding: 12px 10px;
+  }
+
+  .actuator-timing-box {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .actuator-timing-row {
+    flex-direction: column;
+    gap: 6px;
   }
 
   /* SCADA Status Strip */
   .scada-status-strip {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px;
+    gap: 10px;
+    padding: 12px 10px;
+    box-sizing: border-box;
   }
 
   .scada-status-right {
@@ -2182,21 +2474,36 @@ input[type="text"], input[type="number"], select {
     gap: 6px;
   }
 
+  /* Chart Canvases */
+  .chart-card, .chart-container-box {
+    padding: 10px 6px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  canvas {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
   /* Impact 4 Pillars Cards */
   .impact-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
   }
 
   .impact-card {
-    padding: 16px;
+    padding: 14px 10px;
   }
 
   /* PWA Banner */
   #pwaInstallBanner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
+    padding: 12px 10px;
   }
 
   #pwaInstallBanner > div:last-child {
@@ -2212,20 +2519,20 @@ input[type="text"], input[type="number"], select {
 
   /* Chat Window */
   .chat-window-box {
-    height: 380px;
+    height: 360px;
   }
 
   .chat-bubble {
-    max-width: 90%;
-    font-size: 12.5px;
+    max-width: 92%;
+    font-size: 12px;
   }
 
   /* Floating Scroll Button */
   .btn-scroll-top {
-    bottom: 18px;
-    right: 18px;
-    width: 40px;
-    height: 40px;
-    font-size: 14px;
+    bottom: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
+    font-size: 13px;
   }
 }

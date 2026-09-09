@@ -31,8 +31,78 @@
     <aside class="app-sidebar">
       <div>
         <div class="sidebar-header">
-          <img src="./icons/tetes-logo-horizontal.png" alt="TETES Logo" class="sidebar-brand-logo">
-          <div class="sidebar-header-subtitle">Setiap Tetes Lebih Berarti</div>
+          <div class="sidebar-brand-box">
+            <img src="./icons/tetes-logo-horizontal.png" alt="TETES Logo" class="sidebar-brand-logo">
+            <div class="sidebar-header-subtitle">Setiap Tetes Lebih Berarti</div>
+          </div>
+
+          <!-- Mobile Dropdown Navigation Trigger (Replaces clumsy horizontal scroll on <= 992px) -->
+          <div class="mobile-nav-wrapper">
+            <button id="mobileNavBtn" class="mobile-nav-trigger" onclick="toggleMobileNav(event)" type="button" aria-expanded="false">
+              <div class="mobile-nav-trigger-left">
+                <i id="mobileNavActiveIcon" class="fas fa-gauge-high"></i>
+                <span id="mobileNavActiveText">Overview & Telemetri</span>
+              </div>
+              <i id="mobileNavChevron" class="fas fa-chevron-down mobile-chevron"></i>
+            </button>
+
+            <!-- Dropdown Menu Sheet -->
+            <div id="mobileNavMenu" class="mobile-nav-dropdown-menu">
+              <button class="mobile-menu-item active" onclick="selectMobileTab('tab-overview', this)" data-target="tab-overview" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-gauge-high"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">Overview & Telemetri</span>
+                  <span class="mobile-item-sub">Monitoring Real-Time & Sensor Tanah</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+
+              <button class="mobile-menu-item" onclick="selectMobileTab('tab-solar-scada', this)" data-target="tab-solar-scada" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-solar-panel"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">Sistem Daya EBT Surya</span>
+                  <span class="mobile-item-sub">Kelistrikan Panel Surya, Beban & BESS</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+
+              <button class="mobile-menu-item" onclick="selectMobileTab('tab-agronomy-roi', this)" data-target="tab-agronomy-roi" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-calculator"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">Kalkulator Agronomi & ROI</span>
+                  <span class="mobile-item-sub">Simulasi Efisiensi Air & Pupuk Cabai</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+
+              <button class="mobile-menu-item" onclick="selectMobileTab('tab-data-logs', this)" data-target="tab-data-logs" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-table-list"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">Data Log & Riwayat</span>
+                  <span class="mobile-item-sub">Tabel Sensor Real-time & Ekspor CSV</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+
+              <button class="mobile-menu-item" onclick="selectMobileTab('tab-ai-consultant', this)" data-target="tab-ai-consultant" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-robot"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">AI Agronomist Advisor</span>
+                  <span class="mobile-item-sub">Chatbot Konsultan Agronomi Cabai</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+
+              <button class="mobile-menu-item" onclick="selectMobileTab('tab-node-config', this)" data-target="tab-node-config" type="button">
+                <div class="mobile-item-icon"><i class="fas fa-sliders"></i></div>
+                <div class="mobile-item-text">
+                  <span class="mobile-item-title">Konfigurasi & Kalibrasi</span>
+                  <span class="mobile-item-sub">Parameter Ambang Batas & Mode Operasi</span>
+                </div>
+                <i class="fas fa-circle-check mobile-item-check"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="nav-section-title">Operasional Lahan</div>
@@ -464,7 +534,7 @@
                   <canvas id="moistureForecastChart"></canvas>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px; flex-wrap: wrap; gap: 6px;">
                   <span><strong>AI Model:</strong> LSTM 2-Layer with Dropout (386 KB)</span>
                   <span><strong>Fitur:</strong> Soil Moisture, Soil Temp, Air Temp, Humidity, Dew Point</span>
                 </div>
