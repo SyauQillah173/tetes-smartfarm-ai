@@ -211,13 +211,11 @@
               </div>
             </div>
 
-            <!-- Demo Simulation Controls -->
+            <!-- Realtime Live Stream Status -->
             <div class="scada-status-right">
-              <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uji Demo Lomba:</span>
-              <div class="sim-control-group">
-                <button id="btnToggleSim" class="sim-btn-compact active">Simulasi ON</button>
-                <button id="btnSimRain" class="sim-btn-compact"><i class="fas fa-cloud-rain"></i> Hujan 85%</button>
-                <button id="btnSimDry" class="sim-btn-compact"><i class="fas fa-temperature-arrow-up"></i> Kering 28%</button>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: #ffffff; border: 1.5px solid var(--border-medium); border-radius: 9999px; font-size: 12px; font-weight: 700; color: var(--tetes-green); box-shadow: var(--shadow-sm);">
+                <span class="status-indicator-dot" style="width: 8px; height: 8px;"></span>
+                <span id="liveIoTStatusText">Streaming Data Alat Real-Time</span>
               </div>
             </div>
           </div>

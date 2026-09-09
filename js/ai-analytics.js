@@ -128,6 +128,23 @@ const AIAnalytics = {
     });
   },
 
+  updateRealtimeMoisture(val, timestampStr) {
+    if (!this.moistureChart || val === null || isNaN(val)) return;
+    const timeLabel = timestampStr ? (timestampStr.split(' ')[1] || timestampStr) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const chart = this.moistureChart;
+    
+    if (chart.data.labels.length > 30) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+      if (chart.data.datasets[1] && chart.data.datasets[1].data.length > 0) {
+        chart.data.datasets[1].data.shift();
+      }
+    }
+    chart.data.labels.push(timeLabel);
+    chart.data.datasets[0].data.push(parseFloat(val.toFixed(1)));
+    chart.update('none');
+  },
+
   initEnvironmentalChart() {
     const ctx = document.getElementById('environmentalChart');
     if (!ctx) return;

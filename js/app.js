@@ -4,15 +4,15 @@
  */
 
 const AppState = {
-  // Telemetry Sensor
-  soilMoisture: 42.5,
-  soilMoistureRaw: 1250,
-  soilTemp: 26.8,
-  airTemp: 31.4,
-  airHumidity: 68.0,
-  dewPoint: 24.6,
-  vpd: 1.15,
-  soilStatus: 'Lembab',
+  // Telemetry Sensor (Pure Live Mode - Standby until ESP32 connects)
+  soilMoisture: null,
+  soilMoistureRaw: null,
+  soilTemp: null,
+  airTemp: null,
+  airHumidity: null,
+  dewPoint: null,
+  vpd: null,
+  soilStatus: 'Standby',
 
   // EBT Solar & Energy
   solarPowerWatt: 68.4,
@@ -30,16 +30,16 @@ const AppState = {
   etaRainHours: 99.0,
 
   // AI & Actuators
-  aiPrediction: 38.5,
-  aiPredictionTime: '15 Menit ke Depan',
+  aiPrediction: null,
+  aiPredictionTime: 'Menunggu Prediksi',
   autoMode: true,
   pumpActive: false,
   solenoidActive: false,
-  decisionText: 'Monitoring Standby (Zona Perakaran Optimal)',
-  reasonText: 'Sensor tanah dan AI LSTM memantau tingkat kelembapan tanah tanaman cabai.',
+  decisionText: 'Standby • Menunggu Telemetri Alat',
+  reasonText: 'Sistem siap membaca data telemetri real-time dari Firebase Database.',
 
-  // Simulation & Mode
-  isSimulating: true, // Default active for rich presentation demo
+  // Simulation: Completely OFF for real testing
+  isSimulating: false,
   simInterval: null,
   pwaDeferredPrompt: null
 };
@@ -198,23 +198,42 @@ function syncActuatorState() {
    REAL-TIME DATA HANDLERS (FIREBASE)
    =================================================================== */
 function handleFirebaseTelemetry(record) {
-  if (AppState.isSimulating) return;
+  if (!record || typeof record !== 'object') return;
 
-  if (record.soil_moisture !== undefined) AppState.soilMoisture = parseFloat(record.soil_moisture);
-  if (record.soil_temp !== undefined) AppState.soilTemp = parseFloat(record.soil_temp);
-  if (record.atmospheric_temp !== undefined) AppState.airTemp = parseFloat(record.atmospheric_temp);
-  if (record.humidity !== undefined) AppState.airHumidity = parseFloat(record.humidity);
-  if (record.dew_point !== undefined) AppState.dewPoint = parseFloat(record.dew_point);
+  if (record.soil_moisture !== undefined && record.soil_moisture !== null) {
+    AppState.soilMoisture = parseFloat(record.soil_moisture);
+    if (window.AIAnalytics && typeof AIAnalytics.updateRealtimeMoisture === 'function') {
+      AIAnalytics.updateRealtimeMoisture(AppState.soilMoisture, record.timestamp);
+    }
+  }
+  if (record.soil_temp !== undefined && record.soil_temp !== null) AppState.soilTemp = parseFloat(record.soil_temp);
+  if (record.atmospheric_temp !== undefined && record.atmospheric_temp !== null) AppState.airTemp = parseFloat(record.atmospheric_temp);
+  if (record.humidity !== undefined && record.humidity !== null) AppState.airHumidity = parseFloat(record.humidity);
+  if (record.dew_point !== undefined && record.dew_point !== null) AppState.dewPoint = parseFloat(record.dew_point);
+
+  if (record.status_tanah) AppState.soilStatus = record.status_tanah;
+  if (record.status_pompa) AppState.pumpActive = (record.status_pompa === 'ON');
+  if (record.status_solenoid) AppState.solenoidActive = (record.status_solenoid === 'OPEN');
+  if (record.keputusan_irigasi) AppState.decisionText = record.keputusan_irigasi;
+  if (record.alasan_keputusan) AppState.reasonText = record.alasan_keputusan;
 
   // Recalculate VPD & Agronomy
-  const vpdObj = AgronomyEngine.calculateVPD(AppState.airTemp, AppState.airHumidity);
-  AppState.vpd = vpdObj.vpd;
+  if (AppState.airTemp !== null && AppState.airHumidity !== null && window.AgronomyEngine) {
+    const vpdObj = AgronomyEngine.calculateVPD(AppState.airTemp, AppState.airHumidity);
+    AppState.vpd = vpdObj.vpd;
+  }
+
+  // Update live stream text badge
+  const liveBadge = document.getElementById('liveIoTStatusText');
+  if (liveBadge) {
+    liveBadge.textContent = `Streaming Data Alat (${new Date().toLocaleTimeString()})`;
+  }
 
   updateAllUI();
 }
 
 function handleFirebasePrediction(pred) {
-  if (AppState.isSimulating) return;
+  if (!pred || typeof pred !== 'object') return;
   if (pred.predicted_soil_moisture !== undefined) {
     AppState.aiPrediction = parseFloat(pred.predicted_soil_moisture);
   }
@@ -232,109 +251,30 @@ function handleFirebaseStatusChange(isConnected) {
 }
 
 /* ===================================================================
-   SIMULATION ENGINE (FOR DEMO PRESENTATION)
+   SIMULATION ENGINE (CLEARED FOR PURE REAL-TIME TESTING)
    =================================================================== */
 function initSimulationEngine() {
-  const toggleSimBtn = document.getElementById('btnToggleSim');
-  const triggerRainBtn = document.getElementById('btnSimRain');
-  const triggerDryBtn = document.getElementById('btnSimDry');
-
-  if (toggleSimBtn) {
-    toggleSimBtn.addEventListener('click', () => {
-      AppState.isSimulating = !AppState.isSimulating;
-      toggleSimBtn.classList.toggle('active', AppState.isSimulating);
-      toggleSimBtn.textContent = AppState.isSimulating ? 'Simulasi ON' : 'Simulasi OFF';
-    });
-  }
-
-  if (triggerRainBtn) {
-    triggerRainBtn.addEventListener('click', () => {
-      AppState.rainProb = 85.0;
-      AppState.rainMm = 12.5;
-      AppState.airHumidity = 92.0;
-      AppState.airTemp = 26.5;
-      AppState.solarPowerWatt = 12.0;
-      AppState.solarIrradiance = 180;
-      updateAllUI();
-    });
-  }
-
-  if (triggerDryBtn) {
-    triggerDryBtn.addEventListener('click', () => {
-      AppState.soilMoisture = 28.5;
-      AppState.rainProb = 10.0;
-      AppState.rainMm = 0.0;
-      AppState.airTemp = 35.5;
-      AppState.airHumidity = 45.0;
-      updateAllUI();
-    });
-  }
-
-  // Dynamic simulation tick every 3 seconds
-  AppState.simInterval = setInterval(() => {
-    if (!AppState.isSimulating) return;
-
-    const now = new Date();
-    const currentHour = now.getHours() + (now.getMinutes() / 60);
-
-    // Solar calculation
-    const irradiance = SolarEBTEngine.calculateSolarIrradiance(currentHour, 100 - AppState.rainProb);
-    AppState.solarIrradiance = irradiance;
-    const pvData = SolarEBTEngine.calculatePVGeneration(irradiance, 0.18, -0.004, AppState.airTemp);
-    AppState.solarPowerWatt = pvData.powerWatt;
-    AppState.solarVoltage = pvData.voltage;
-    AppState.solarCurrent = pvData.current;
-
-    // Battery charge/discharge
-    const netWatt = pvData.powerWatt - (AppState.pumpActive ? 30 : 2);
-    AppState.batterySoC = SolarEBTEngine.estimateBatterySoC(AppState.batterySoC, netWatt, 0.05);
-
-    // Clean energy accumulator
-    AppState.dailyCleanEnergyKWh += (pvData.powerWatt * 3) / (3600 * 1000);
-    const carbonData = SolarEBTEngine.calculateCarbonOffset(AppState.dailyCleanEnergyKWh);
-    AppState.totalCarbonSavedKg = carbonData.carbonOffsetKg;
-
-    // Soil Moisture dynamics
-    if (AppState.pumpActive) {
-      AppState.soilMoisture = Math.min(85, AppState.soilMoisture + 2.5);
-    } else {
-      const evapRate = (AppState.airTemp > 32 ? 0.25 : 0.12);
-      AppState.soilMoisture = Math.max(22, AppState.soilMoisture - evapRate);
-    }
-
-    // AI Prediction estimation
-    AppState.aiPrediction = Math.max(18, parseFloat((AppState.soilMoisture - 2.8 + (Math.random() * 0.6)).toFixed(1)));
-
-    // Temperature & Humidity minor drift
-    AppState.airTemp = parseFloat((AppState.airTemp + (Math.random() * 0.2 - 0.1)).toFixed(1));
-    AppState.airHumidity = parseFloat((AppState.airHumidity + (Math.random() * 0.4 - 0.2)).toFixed(1));
-
-    // Agronomy calculations
-    AppState.dewPoint = AgronomyEngine.calculateDewPoint(AppState.airTemp, AppState.airHumidity);
-    const vpdRes = AgronomyEngine.calculateVPD(AppState.airTemp, AppState.airHumidity);
-    AppState.vpd = vpdRes.vpd;
-
-    updateAllUI();
-  }, 3000);
+  // Pure real-time IoT mode: no fake dummy ticks
 }
 
 /* ===================================================================
    MASTER UI RENDERER
    =================================================================== */
 function updateAllUI() {
-  // 1. Evaluate Smart AI Decision
-  const decision = AIAnalytics.evaluateSmartDecision(
-    AppState.soilMoisture,
-    AppState.aiPrediction,
-    AppState.rainProb,
-    AppState.batterySoC,
-    AppState.autoMode
-  );
+  // 1. Evaluate Smart AI Decision (Only if in Auto mode and data available)
+  if (AppState.autoMode && AppState.soilMoisture !== null) {
+    const decision = AIAnalytics.evaluateSmartDecision(
+      AppState.soilMoisture,
+      AppState.aiPrediction || AppState.soilMoisture,
+      AppState.rainProb,
+      AppState.batterySoC,
+      AppState.autoMode
+    );
 
-  AppState.decisionText = decision.action;
-  AppState.reasonText = decision.reason;
-
-  if (AppState.autoMode) {
+    if (!AppState.decisionText || AppState.decisionText.includes('Standby')) {
+      AppState.decisionText = decision.action;
+      AppState.reasonText = decision.reason;
+    }
     AppState.pumpActive = decision.pumpActive;
     AppState.solenoidActive = decision.solenoidActive;
   }
@@ -343,15 +283,15 @@ function updateAllUI() {
   setElemText('headerSolarWatt', `${AppState.solarPowerWatt.toFixed(1)} W`);
   setElemText('headerBatteryPct', `${AppState.batterySoC.toFixed(0)}%`);
 
-  setElemText('heroMoistureVal', AppState.soilMoisture.toFixed(1));
+  setElemText('heroMoistureVal', AppState.soilMoisture !== null ? AppState.soilMoisture.toFixed(1) : '--');
   setElemText('heroSolarVal', AppState.solarPowerWatt.toFixed(1));
   setElemText('heroBatteryVal', AppState.batterySoC.toFixed(0));
-  setElemText('heroVpdVal', AppState.vpd.toFixed(2));
+  setElemText('heroVpdVal', AppState.vpd !== null ? AppState.vpd.toFixed(2) : '--');
 
   // 3. Update Status Strip
   setElemText('decisionActionTitle', AppState.decisionText);
   setElemText('decisionActionReason', AppState.reasonText);
-  setElemText('decisionLstmVal', AppState.aiPrediction.toFixed(1));
+  setElemText('decisionLstmVal', AppState.aiPrediction !== null ? AppState.aiPrediction.toFixed(1) : '--');
   
   const scadaBadge = document.getElementById('scadaModeBadge');
   if (scadaBadge) {
@@ -360,10 +300,10 @@ function updateAllUI() {
   }
 
   // 4. Update Telemetry Metric Boxes
-  setElemText('gaugeAirTempNum', AppState.airTemp.toFixed(1));
-  setElemText('gaugeAirHumiNum', AppState.airHumidity.toFixed(1));
-  setElemText('gaugeSoilTempNum', AppState.soilTemp.toFixed(1));
-  setElemText('gaugeDewPointNum', AppState.dewPoint.toFixed(1));
+  setElemText('gaugeAirTempNum', AppState.airTemp !== null ? AppState.airTemp.toFixed(1) : '--');
+  setElemText('gaugeAirHumiNum', AppState.airHumidity !== null ? AppState.airHumidity.toFixed(1) : '--');
+  setElemText('gaugeSoilTempNum', AppState.soilTemp !== null ? AppState.soilTemp.toFixed(1) : '--');
+  setElemText('gaugeDewPointNum', AppState.dewPoint !== null ? AppState.dewPoint.toFixed(1) : '--');
   setElemText('weatherRainProb', AppState.rainProb.toFixed(0));
 
   // 5. Update EBT Solar & Battery Panel
