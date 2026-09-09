@@ -14,14 +14,27 @@ const AppState = {
   vpd: null,
   soilStatus: 'Standby',
 
-  // EBT Solar & Energy
-  solarPowerWatt: 68.4,
-  solarVoltage: 14.3,
-  solarCurrent: 4.78,
+  // Device Guardian & Operating Lifecycle (Online/Offline Tracking)
+  isDeviceOnline: false,
+  deviceOnlineSince: null,
+  deviceOfflineSince: null,
+  deviceUptimeSeconds: 0,
+  deviceOfflineSeconds: 0,
+  lastTelemetryArrival: 0,
+  lastTelemetryUnix: null,
+  telemetryAgeSec: 0,
+
+  // Electrical Power & Energy SCADA (Realtime Load, Solar & Battery)
+  currentLoadWatt: 0.0,
+  netPowerWatt: 0.0,
+  dailyEnergyConsumedWh: 0.0,
+  solarPowerWatt: 0.0,
+  solarVoltage: 12.6,
+  solarCurrent: 0.0,
   batterySoC: 88.0,
-  solarIrradiance: 720,
-  dailyCleanEnergyKWh: 0.42,
-  totalCarbonSavedKg: 0.36,
+  solarIrradiance: 0,
+  dailyCleanEnergyKWh: 0.08,
+  totalCarbonSavedKg: 0.07,
 
   // Weather Open-Meteo
   forecastTemp: 32.0,
@@ -38,10 +51,17 @@ const AppState = {
   decisionText: 'Standby • Menunggu Telemetri Alat',
   reasonText: 'Sistem siap membaca data telemetri real-time dari Firebase Database.',
 
-  // Live Actuator & Real-time Benchmark Tracking
+  // Live Actuator Timing & Benchmark Tracking
   pumpSecondsActive: 0,
   liveWaterPumpedMl: 0,
-  lastPumpActiveTime: null,
+  pumpLastStartTime: null,
+  pumpLastStopTime: null,
+  pumpCurrentSessionSeconds: 0,
+
+  // Soil & Water Intelligence
+  soilZone: 'STANDBY',
+  soilZoneTitle: 'Standby • Menunggu Data Sensor',
+  soilZoneAdvice: 'Hubungkan atau nyalakan alat ESP32 untuk pembacaan lengas tanah presisi.',
 
   // Simulation: Completely OFF for real testing
   isSimulating: false,
@@ -67,19 +87,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Firebase connector with live telemetry, prediction, status, and history
   if (window.FirebaseConnector) {
     FirebaseConnector.init(
-      (record) => handleFirebaseTelemetry(record),
+      (record, key, isFresh, meta) => handleFirebaseTelemetry(record, key, isFresh, meta),
       (pred) => handleFirebasePrediction(pred),
-      (status) => handleFirebaseStatusChange(status),
+      (status, meta) => handleFirebaseStatusChange(status, meta),
       (records) => handleFirebaseHistory(records)
     );
   }
 
-  // Real-time pump runtime ticker (updates volume & saving percentage live each second)
+  // Real-time 1-Second Master Engine Ticker
   setInterval(() => {
-    if (AppState.pumpActive) {
-      AppState.pumpSecondsActive += 1;
-      updateLiveBenchmarkMetrics();
-    }
+    runMasterSecondTicker();
   }, 1000);
 
   // Periodic Solar EBT recalculation
@@ -190,8 +207,18 @@ function initActuatorControls() {
   if (togglePump) {
     togglePump.addEventListener('change', (e) => {
       if (!AppState.autoMode) {
-        AppState.pumpActive = e.target.checked;
+        const val = e.target.checked;
+        if (!AppState.pumpActive && val) {
+          AppState.pumpLastStartTime = new Date().toLocaleTimeString('id-ID') + ' WIB';
+          AppState.pumpCurrentSessionSeconds = 0;
+        } else if (AppState.pumpActive && !val) {
+          AppState.pumpLastStopTime = new Date().toLocaleTimeString('id-ID') + ' WIB';
+        }
+        AppState.pumpActive = val;
         syncActuatorState();
+        updateElectricalPowerCalculations();
+        updateDeviceGuardianUI();
+        evaluateSoilAndWaterIntelligence();
       }
     });
   }
@@ -201,6 +228,8 @@ function initActuatorControls() {
       if (!AppState.autoMode) {
         AppState.solenoidActive = e.target.checked;
         syncActuatorState();
+        updateElectricalPowerCalculations();
+        updateDeviceGuardianUI();
       }
     });
   }
@@ -214,11 +243,333 @@ function syncActuatorState() {
 }
 
 /* ===================================================================
+   DEVICE GUARDIAN & OPERATING LIFECYCLE (ONLINE / OFFLINE LOGIC)
+   =================================================================== */
+function setDeviceOnlineState(online, meta = {}) {
+  const wasOnline = AppState.isDeviceOnline;
+  AppState.isDeviceOnline = online;
+
+  if (online) {
+    if (!wasOnline) {
+      AppState.deviceOnlineSince = new Date();
+      AppState.deviceOfflineSince = null;
+      AppState.deviceUptimeSeconds = 0;
+      console.log('🟢 [TETES IoT] Perangkat Terdeteksi ONLINE & AKTIF');
+    }
+    if (meta.ageSec !== undefined) {
+      AppState.telemetryAgeSec = meta.ageSec;
+    }
+  } else {
+    if (wasOnline) {
+      AppState.deviceOfflineSince = new Date();
+      AppState.deviceOnlineSince = null;
+      AppState.deviceOfflineSeconds = 0;
+      console.log('🔴 [TETES IoT] Perangkat Terdeteksi OFFLINE / BELUM DINYALAKAN');
+    }
+  }
+  updateElectricalPowerCalculations();
+  updateDeviceGuardianUI();
+}
+
+function formatDuration(totalSec) {
+  if (isNaN(totalSec) || totalSec <= 0) return '00:00:00';
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatOfflineTime(dateObj, seconds) {
+  if (!dateObj) return 'Belum Pernah Dinyalakan';
+  const timeStr = dateObj.toLocaleTimeString('id-ID') + ' WIB';
+  if (seconds < 60) return `${timeStr} (${seconds}s lalu)`;
+  if (seconds < 3600) return `${timeStr} (${Math.floor(seconds / 60)}m lalu)`;
+  return `${timeStr} (${Math.floor(seconds / 3600)}j ${Math.floor((seconds % 3600) / 60)}m lalu)`;
+}
+
+function updateDeviceGuardianUI() {
+  const isOnline = AppState.isDeviceOnline;
+
+  // 1. Guardian Strip Class
+  const strip = document.getElementById('deviceGuardianStrip');
+  if (strip) {
+    strip.className = `device-guardian-strip ${isOnline ? 'is-online' : 'is-offline'}`;
+  }
+
+  // 2. Pulse Dot
+  const dot = document.getElementById('guardianPulseDot');
+  if (dot) {
+    dot.className = `guardian-indicator-dot ${isOnline ? 'online' : 'offline'}`;
+  }
+
+  // 3. State Title
+  const title = document.getElementById('guardianDeviceStateTitle');
+  if (title) {
+    title.textContent = isOnline 
+      ? 'ESP32 NODE 01: ONLINE & AKTIF' 
+      : 'ESP32 NODE 01: OFF (ALAT BELUM DINYALAKAN)';
+  }
+
+  // 4. State Chip
+  const chip = document.getElementById('guardianDeviceChip');
+  if (chip) {
+    chip.className = `guardian-chip ${isOnline ? 'chip-online' : 'chip-offline'}`;
+    chip.innerHTML = isOnline 
+      ? '<i class="fas fa-circle-check"></i> SEDANG NYALA & STREAMING' 
+      : '<i class="fas fa-circle-xmark"></i> ALAT BELUM DINYALAKAN';
+  }
+
+  // 5. Subtext
+  const subtext = document.getElementById('guardianSubtext');
+  if (subtext) {
+    subtext.textContent = isOnline 
+      ? 'Perangkat fisik ESP32 aktif terhubung ke Hotspot • Telemetri dikirim tiap 5 detik ke Firebase RTDB.'
+      : 'Perangkat IoT ESP32 sedang mati atau belum tersambung ke daya/WiFi. Nyalakan alat untuk streaming real-time.';
+  }
+
+  // 6. Uptime / Downtime
+  const uptimeLabel = document.getElementById('guardianUptimeLabel');
+  const uptimeVal = document.getElementById('guardianUptimeVal');
+  if (uptimeLabel && uptimeVal) {
+    if (isOnline) {
+      uptimeLabel.textContent = 'Durasi Nyala (Uptime)';
+      uptimeVal.textContent = formatDuration(AppState.deviceUptimeSeconds);
+      uptimeVal.style.color = 'var(--tetes-green)';
+    } else {
+      uptimeLabel.textContent = 'Waktu Mati (Terputus Sejak)';
+      uptimeVal.textContent = AppState.deviceOfflineSince 
+        ? formatOfflineTime(AppState.deviceOfflineSince, AppState.deviceOfflineSeconds)
+        : 'Belum Dinyalakan';
+      uptimeVal.style.color = '#e11d48';
+    }
+  }
+
+  // 7. Load Watt
+  const loadVal = document.getElementById('guardianLoadWattVal');
+  const loadSub = document.getElementById('guardianLoadWattSub');
+  if (loadVal && loadSub) {
+    loadVal.textContent = `${AppState.currentLoadWatt.toFixed(1)} W`;
+    if (isOnline) {
+      if (AppState.pumpActive && AppState.solenoidActive) {
+        loadSub.textContent = 'ESP32 + Pompa + Solenoid (32.2W)';
+      } else if (AppState.pumpActive) {
+        loadSub.textContent = 'ESP32 (2.2W) + Pompa 12V (24W)';
+      } else {
+        loadSub.textContent = 'ESP32 Standby (WiFi + Sensor)';
+      }
+    } else {
+      loadSub.textContent = 'Daya 0 W (Alat Mati)';
+    }
+  }
+
+  // 8. Heartbeat
+  const hbVal = document.getElementById('guardianHeartbeatVal');
+  const lastSeen = document.getElementById('guardianLastSeenTime');
+  if (hbVal && lastSeen) {
+    if (isOnline) {
+      const age = AppState.telemetryAgeSec;
+      hbVal.textContent = age <= 3 ? 'Baru saja' : `${age}s lalu`;
+      hbVal.style.color = 'var(--tetes-blue)';
+      lastSeen.textContent = AppState.lastTelemetryUnix 
+        ? `${new Date(AppState.lastTelemetryUnix * 1000).toLocaleTimeString('id-ID')} WIB`
+        : 'Streaming Aktif';
+    } else {
+      hbVal.textContent = 'Terputus';
+      hbVal.style.color = '#94a3b8';
+      lastSeen.textContent = 'Menunggu Sinyal ESP32';
+    }
+  }
+
+  // 9. Header Quick Indicator
+  const headerPill = document.getElementById('headerDevicePill');
+  const headerPulse = document.getElementById('headerDevicePulse');
+  const headerText = document.getElementById('headerDeviceStatusText');
+  const headerLoad = document.getElementById('headerLoadWatt');
+  if (headerPill) {
+    if (isOnline) {
+      headerPill.style.background = '#f0fdf4';
+      headerPill.style.borderColor = '#86efac';
+      headerPill.style.color = '#15803d';
+    } else {
+      headerPill.style.background = '#fef2f2';
+      headerPill.style.borderColor = '#fca5a5';
+      headerPill.style.color = '#dc2626';
+    }
+  }
+  if (headerPulse) {
+    headerPulse.className = `guardian-indicator-dot ${isOnline ? 'online' : 'offline'}`;
+  }
+  if (headerText) {
+    headerText.textContent = isOnline ? 'Alat Online & Nyala' : 'Alat OFF (Belum Nyala)';
+  }
+  if (headerLoad) {
+    headerLoad.textContent = `${AppState.currentLoadWatt.toFixed(1)} W`;
+  }
+
+  // 10. Sidebar Status
+  const sidebarStatus = document.getElementById('sidebarStatusText');
+  if (sidebarStatus) {
+    sidebarStatus.textContent = isOnline ? 'ESP32 Online • 5s Interval' : 'Status: Alat Belum Dinyalakan';
+  }
+}
+
+/* ===================================================================
+   REAL-TIME ELECTRICAL POWER SCADA CALCULATIONS
+   =================================================================== */
+function updateElectricalPowerCalculations() {
+  const esp32Watt = AppState.isDeviceOnline ? 2.2 : 0.0;
+  const pumpWatt = (AppState.isDeviceOnline && AppState.pumpActive) ? 24.0 : 0.0;
+  const solenoidWatt = (AppState.isDeviceOnline && AppState.solenoidActive) ? 6.0 : 0.0;
+
+  AppState.currentLoadWatt = parseFloat((esp32Watt + pumpWatt + solenoidWatt).toFixed(1));
+  AppState.netPowerWatt = parseFloat((AppState.solarPowerWatt - AppState.currentLoadWatt).toFixed(1));
+
+  // Update DOM metrics
+  setElemText('headerLoadWatt', `${AppState.currentLoadWatt.toFixed(1)} W`);
+  setElemText('guardianLoadWattVal', `${AppState.currentLoadWatt.toFixed(1)} W`);
+  setElemText('scadaSystemLoadWatt', `${AppState.currentLoadWatt.toFixed(1)} W`);
+  
+  const scadaNet = document.getElementById('scadaSystemNetWatt');
+  if (scadaNet) {
+    scadaNet.textContent = `${AppState.netPowerWatt >= 0 ? '+' : ''}${AppState.netPowerWatt.toFixed(1)} W`;
+    scadaNet.style.color = AppState.netPowerWatt >= 0 ? 'var(--tetes-green)' : '#f59e0b';
+  }
+
+  setElemText('actuatorPumpWatt', `${pumpWatt.toFixed(1)} W`);
+}
+
+/* ===================================================================
+   SMART SOIL-WATER & AGRONOMIC INTELLIGENCE
+   =================================================================== */
+function evaluateSoilAndWaterIntelligence() {
+  const sm = AppState.soilMoisture;
+  const isPump = AppState.pumpActive;
+
+  // 1. Klasifikasi 4-Zona Agronomi Tanah Cabai
+  let zone = 'STANDBY';
+  let zoneTitle = 'Monitoring Standby';
+  let agronomyAdvice = 'Sensor memantau tingkat kelembapan tanah perakaran cabai.';
+
+  if (sm === null) {
+    zone = 'STANDBY';
+    zoneTitle = 'Standby • Menunggu Data Sensor';
+    agronomyAdvice = 'Hubungkan atau nyalakan alat ESP32 untuk pembacaan lengas tanah presisi.';
+  } else if (sm > 80.0) {
+    zone = 'WATERLOGGED';
+    zoneTitle = 'Zona Jenuh Air (>80%) - Irigasi Dilarang';
+    agronomyAdvice = `Kelembapan sangat tinggi (${sm}%). Risiko busuk akar (Phytophthora) & defisit aerasi O₂. AI mengunci irigasi 100% dan merekomendasikan pengecekan drainase polybag.`;
+  } else if (sm >= 60.0 && sm <= 80.0) {
+    zone = 'OPTIMAL';
+    zoneTitle = 'Kapasitas Lapang Ideal (60% - 80%)';
+    agronomyAdvice = `Kelembapan tanah (${sm}%) berada pada kapasitas lapang optimal cabai rawit. Unsur hara terlarut prima. Pompa standby, penghematan air 100% aktif.`;
+  } else if (sm >= 40.0 && sm < 60.0) {
+    zone = 'INTERVENTION';
+    zoneTitle = 'Titik Intervensi Drip (40% - 59.9%)';
+    if (AppState.rainProb >= 60) {
+      agronomyAdvice = `Kelembapan (${sm}%) mendekati batas lengas, namun prakiraan cuaca mendeteksi hujan ${AppState.rainProb}%. AI menunda irigasi alamiah.`;
+    } else {
+      agronomyAdvice = `Kelembapan (${sm}%) memasuki deplesi awal. AI merekomendasikan mikro-drip pulsa terukur 15 detik untuk stabilisasi lengas.`;
+    }
+  } else {
+    // sm < 40.0
+    zone = 'CRITICAL';
+    zoneTitle = 'Titik Layu Kritis (<40%) - Siram Segera!';
+    agronomyAdvice = `Tanah mengalami deplesi air akut (${sm}%). Risiko rontok bunga & daun layu. Pompa diaktifkan dalam mode irigasi presisi darurat.`;
+  }
+
+  AppState.soilZone = zone;
+  AppState.soilZoneTitle = zoneTitle;
+  AppState.soilZoneAdvice = agronomyAdvice;
+
+  // Render ke decision title & reason jika dalam auto mode
+  if (AppState.autoMode) {
+    if (!isPump && sm !== null && sm > 50) {
+      AppState.decisionText = zoneTitle;
+      AppState.reasonText = agronomyAdvice;
+    }
+    setElemText('decisionActionTitle', AppState.decisionText);
+    setElemText('decisionActionReason', AppState.reasonText);
+  }
+
+  // 2. Waktu Nyala & Waktu Mati Pompa (Actuator Timing Box)
+  setElemText('actuatorPumpStartTime', AppState.pumpLastStartTime || '--:--:--');
+  setElemText('actuatorPumpStopTime', AppState.pumpLastStopTime || '--:--:--');
+  
+  const durationElem = document.getElementById('actuatorPumpDuration');
+  if (durationElem) {
+    if (isPump) {
+      durationElem.textContent = `${AppState.pumpCurrentSessionSeconds} detik (Aktif)`;
+      durationElem.style.color = '#38bdf8';
+    } else {
+      durationElem.textContent = AppState.pumpCurrentSessionSeconds > 0 
+        ? `${AppState.pumpCurrentSessionSeconds} detik` 
+        : '0 detik';
+      durationElem.style.color = 'var(--text-main)';
+    }
+  }
+}
+
+/* ===================================================================
+   MASTER 1-SECOND TICKER ENGINE
+   =================================================================== */
+function runMasterSecondTicker() {
+  const now = Date.now();
+
+  // 1. Device Freshness & Auto-Offline Detection Watchdog
+  if (AppState.lastTelemetryArrival > 0) {
+    const elapsedMs = now - AppState.lastTelemetryArrival;
+    AppState.telemetryAgeSec = Math.round(elapsedMs / 1000);
+
+    // Jika lebih dari 15 detik tidak ada data masuk, otomatis OFF
+    if (elapsedMs > 15000 && AppState.isDeviceOnline) {
+      setDeviceOnlineState(false);
+    }
+  } else {
+    // Belum pernah ada data
+    if (AppState.isDeviceOnline) {
+      setDeviceOnlineState(false);
+    }
+  }
+
+  // 2. Waktu Nyala (Uptime) & Waktu Mati (Downtime) Counter
+  if (AppState.isDeviceOnline) {
+    AppState.deviceUptimeSeconds += 1;
+    // Akumulasi konsumsi energi listrik (Wh = Watt * jam)
+    AppState.dailyEnergyConsumedWh += (AppState.currentLoadWatt / 3600);
+  } else {
+    AppState.deviceOfflineSeconds += 1;
+  }
+
+  // 3. Pompa Runtime Ticker (jika pompa sedang aktif menyiram)
+  if (AppState.pumpActive) {
+    AppState.pumpSecondsActive += 1;
+    AppState.pumpCurrentSessionSeconds += 1;
+  }
+
+  // 4. Sinkronisasi UI Tiap Detik
+  updateElectricalPowerCalculations();
+  updateDeviceGuardianUI();
+  evaluateSoilAndWaterIntelligence();
+  updateLiveBenchmarkMetrics();
+}
+
+/* ===================================================================
    REAL-TIME DATA HANDLERS (FIREBASE)
    =================================================================== */
-function handleFirebaseTelemetry(record) {
+function handleFirebaseTelemetry(record, key, isFresh, meta) {
   if (!record || typeof record !== 'object') return;
 
+  const now = Date.now();
+  AppState.lastTelemetryArrival = now;
+  if (record.timestamp_unix) {
+    AppState.lastTelemetryUnix = record.timestamp_unix;
+  }
+
+  // Evaluasi status online / offline
+  const fresh = (isFresh !== undefined) ? isFresh : true;
+  setDeviceOnlineState(fresh, meta || {});
+
+  // Update data telemetri
   if (record.soil_moisture !== undefined && record.soil_moisture !== null) {
     AppState.soilMoisture = parseFloat(Number(record.soil_moisture).toFixed(1));
   }
@@ -228,7 +579,17 @@ function handleFirebaseTelemetry(record) {
   if (record.dew_point !== undefined && record.dew_point !== null) AppState.dewPoint = parseFloat(Number(record.dew_point).toFixed(1));
 
   if (record.status_tanah) AppState.soilStatus = record.status_tanah;
-  if (record.status_pompa) AppState.pumpActive = (record.status_pompa === 'ON');
+
+  // Track transisi status pompa (Waktu Nyala & Waktu Mati Pompa)
+  const incomingPump = (record.status_pompa === 'ON');
+  if (!AppState.pumpActive && incomingPump) {
+    AppState.pumpLastStartTime = new Date().toLocaleTimeString('id-ID') + ' WIB';
+    AppState.pumpCurrentSessionSeconds = 0;
+  } else if (AppState.pumpActive && !incomingPump) {
+    AppState.pumpLastStopTime = new Date().toLocaleTimeString('id-ID') + ' WIB';
+  }
+  AppState.pumpActive = incomingPump;
+
   if (record.status_solenoid) AppState.solenoidActive = (record.status_solenoid === 'OPEN');
   if (record.keputusan_irigasi) AppState.decisionText = record.keputusan_irigasi;
   if (record.alasan_keputusan) AppState.reasonText = record.alasan_keputusan;
@@ -297,11 +658,8 @@ function handleFirebasePrediction(pred) {
   updateAllUI();
 }
 
-function handleFirebaseStatusChange(isConnected) {
-  const sidebarStatus = document.getElementById('sidebarStatusText');
-  if (sidebarStatus) {
-    sidebarStatus.textContent = isConnected ? 'Firebase RTDB: Terhubung' : 'Mode Offline / Standby';
-  }
+function handleFirebaseStatusChange(isConnected, meta) {
+  setDeviceOnlineState(isConnected, meta || {});
 }
 
 /* ===================================================================
@@ -333,7 +691,12 @@ function updateAllUI() {
     AppState.solenoidActive = decision.solenoidActive;
   }
 
-  // 2. Update Header & KPI Values
+  // 2. Update Electrical Power & Device Guardian
+  updateElectricalPowerCalculations();
+  updateDeviceGuardianUI();
+  evaluateSoilAndWaterIntelligence();
+
+  // 3. Update Header & KPI Values
   setElemText('headerSolarWatt', `${AppState.solarPowerWatt.toFixed(1)} W`);
   setElemText('headerBatteryPct', `${AppState.batterySoC.toFixed(0)}%`);
 
@@ -342,7 +705,7 @@ function updateAllUI() {
   setElemText('heroBatteryVal', AppState.batterySoC.toFixed(0));
   setElemText('heroVpdVal', AppState.vpd !== null ? AppState.vpd.toFixed(2) : '--');
 
-  // 3. Update Status Strip
+  // 4. Update Status Strip
   setElemText('decisionActionTitle', AppState.decisionText);
   setElemText('decisionActionReason', AppState.reasonText);
   setElemText('decisionLstmVal', AppState.aiPrediction !== null ? AppState.aiPrediction.toFixed(1) : '--');
@@ -353,14 +716,14 @@ function updateAllUI() {
     scadaBadge.className = `status-badge-chip ${AppState.autoMode ? 'active-auto' : 'active-manual'}`;
   }
 
-  // 4. Update Telemetry Metric Boxes
+  // 5. Update Telemetry Metric Boxes
   setElemText('gaugeAirTempNum', AppState.airTemp !== null ? AppState.airTemp.toFixed(1) : '--');
   setElemText('gaugeAirHumiNum', AppState.airHumidity !== null ? AppState.airHumidity.toFixed(1) : '--');
   setElemText('gaugeSoilTempNum', AppState.soilTemp !== null ? AppState.soilTemp.toFixed(1) : '--');
   setElemText('gaugeDewPointNum', AppState.dewPoint !== null ? AppState.dewPoint.toFixed(1) : '--');
   setElemText('weatherRainProb', AppState.rainProb.toFixed(0));
 
-  // 5. Update EBT Solar & Battery Panel
+  // 6. Update EBT Solar & Battery Panel
   setElemText('solarWattBadge', `${AppState.solarPowerWatt.toFixed(1)} W`);
   setElemText('solarVoltText', `${AppState.solarVoltage.toFixed(1)} V`);
   setElemText('solarAmpText', `${AppState.solarCurrent.toFixed(2)} A`);
@@ -387,19 +750,13 @@ function updateAllUI() {
   // Realtime Solar EBT Calculation based on real time of day
   updateSolarEBTRealtime();
 
-  // Update Tab 2 Solar SCADA Telemetry
-  setElemText('tab2SolarWatt', AppState.solarPowerWatt.toFixed(1));
-  setElemText('tab2BatteryPct', AppState.batterySoC.toFixed(0));
-  setElemText('tab2DailyKwh', AppState.dailyCleanEnergyKWh.toFixed(2));
-  setElemText('tab2CarbonKg', AppState.totalCarbonSavedKg.toFixed(2));
-
-  // 6. Update Actuator State Toggles & Status
+  // 7. Update Actuator State Toggles & Status
   updateActuatorUI();
 
-  // 7. Calculate Real-Time Live Benchmark Metrics (Hasil Pengujian Murni Realtime & Tanpa Dummy)
+  // 8. Calculate Real-Time Live Benchmark Metrics
   updateLiveBenchmarkMetrics();
 
-  // 8. Render Real Telemetry Table in Data Logs Tab
+  // 9. Render Real Telemetry Table in Data Logs Tab
   renderTelemetryTable();
 }
 
@@ -426,6 +783,42 @@ function updateSolarEBTRealtime() {
 
   const offset = SolarEBTEngine.calculateCarbonOffset(AppState.dailyCleanEnergyKWh);
   AppState.totalCarbonSavedKg = offset.carbonOffsetKg;
+
+  // Update Tab 2 Solar SCADA Telemetry
+  setElemText('tab2SolarWatt', AppState.solarPowerWatt.toFixed(1));
+  setElemText('tab2BatteryPct', AppState.batterySoC.toFixed(0));
+  setElemText('tab2DailyKwh', AppState.dailyCleanEnergyKWh.toFixed(2));
+  setElemText('tab2CarbonKg', AppState.totalCarbonSavedKg.toFixed(2));
+
+  // Tab 2 Row 2: Load, Net Balance, Consumed Wh, Device Operating Status
+  setElemText('tab2LoadWatt', AppState.currentLoadWatt.toFixed(1));
+  const tab2Net = document.getElementById('tab2NetWatt');
+  if (tab2Net) {
+    tab2Net.textContent = `${AppState.netPowerWatt >= 0 ? '+' : ''}${AppState.netPowerWatt.toFixed(1)}`;
+    tab2Net.style.color = AppState.netPowerWatt >= 0 ? 'var(--tetes-green)' : '#f59e0b';
+  }
+  const tab2NetSub = document.getElementById('tab2NetSub');
+  if (tab2NetSub) {
+    tab2NetSub.textContent = AppState.netPowerWatt >= 0 ? 'Surplus (Baterai Charging)' : 'Defisit (Baterai Discharging)';
+  }
+  const tab2LoadSub = document.getElementById('tab2LoadSub');
+  if (tab2LoadSub) {
+    tab2LoadSub.textContent = AppState.isDeviceOnline 
+      ? (AppState.pumpActive ? 'ESP32 (2.2W) + Pompa 12V (24W)' : 'ESP32 Standby')
+      : 'Daya 0 W (Alat Mati)';
+  }
+  setElemText('tab2ConsumedWh', AppState.dailyEnergyConsumedWh.toFixed(2));
+  const tab2Dev = document.getElementById('tab2DeviceStateText');
+  if (tab2Dev) {
+    tab2Dev.textContent = AppState.isDeviceOnline ? 'ONLINE & NYALA' : 'OFF (MATI)';
+    tab2Dev.style.color = AppState.isDeviceOnline ? 'var(--tetes-green)' : '#dc2626';
+  }
+  const tab2Uptime = document.getElementById('tab2DeviceUptimeSub');
+  if (tab2Uptime) {
+    tab2Uptime.textContent = AppState.isDeviceOnline 
+      ? `Uptime: ${formatDuration(AppState.deviceUptimeSeconds)}`
+      : (AppState.deviceOfflineSince ? `Mati: ${AppState.deviceOfflineSince.toLocaleTimeString('id-ID')}` : 'Belum Dinyalakan');
+  }
 }
 
 function updateLiveBenchmarkMetrics() {
@@ -446,6 +839,7 @@ function updateLiveBenchmarkMetrics() {
   const pumpActiveMl = Math.round(AppState.pumpSecondsActive * 11.6);
   const historyMl = Math.round(historicalPumpCycles * 58);
   let tetesWaterMl = pumpActiveMl + historyMl;
+  AppState.liveWaterPumpedMl = tetesWaterMl;
 
   // 3. Baseline Pembanding Konvensional (mL):
   // Standar siram manual petani cabai di Gresik: 900 mL / polybag / hari (2x siram manual @ 450 mL)
@@ -456,8 +850,6 @@ function updateLiveBenchmarkMetrics() {
   if (tetesWaterMl > 0) {
     savingsPercent = Math.max(0, Math.min(99.9, ((convWaterMl - tetesWaterMl) / convWaterMl) * 100));
   } else {
-    // Jika tanah masih basah/lembab (misal 99% seperti saat ini) dan pompa tidak perlu menyiram:
-    // TETES menghemat 100% air dibanding metode konvensional yang tetap disiram manual!
     savingsPercent = 100.0;
   }
 
@@ -474,14 +866,17 @@ function updateLiveBenchmarkMetrics() {
 
   const badgeText = document.getElementById('heroTestBadgeText');
   if (badgeText) {
-    if (AppState.pumpActive) {
-      badgeText.innerHTML = `<span style="color: #38bdf8; font-weight: 800;"><i class="fas fa-faucet-drip fa-bounce"></i> Pompa Menyiram (${AppState.pumpSecondsActive}s • ${tetesWaterMl} mL)</span>`;
-    } else if (AppState.soilMoisture !== null && AppState.soilMoisture > 50) {
-      badgeText.innerHTML = `<span style="color: var(--tetes-green); font-weight: 700;"><i class="fas fa-check-circle"></i> Uji Real-Time: Tanah Basah (${AppState.soilMoisture.toFixed(1)}%) • AI Menahan Siram (0 mL)</span>`;
+    if (!AppState.isDeviceOnline) {
+      badgeText.innerHTML = `<span style="color: #ef4444; font-weight: 700;"><i class="fas fa-plug-circle-xmark"></i> Alat Belum Dinyalakan • Pengujian Standby</span>`;
+    } else if (AppState.pumpActive) {
+      badgeText.innerHTML = `<span style="color: #38bdf8; font-weight: 800;"><i class="fas fa-faucet-drip fa-bounce"></i> Pompa Menyiram (${AppState.pumpCurrentSessionSeconds}s • ${tetesWaterMl} mL)</span>`;
+    } else if (AppState.soilMoisture !== null && AppState.soilMoisture > 80) {
+      badgeText.innerHTML = `<span style="color: var(--tetes-green); font-weight: 700;"><i class="fas fa-shield-halved"></i> Tanah Jenuh Air (${AppState.soilMoisture.toFixed(1)}%) • AI Mengunci Siram (Hemat 100% Air)</span>`;
+    } else if (AppState.soilMoisture !== null && AppState.soilMoisture >= 60) {
+      badgeText.innerHTML = `<span style="color: var(--tetes-green); font-weight: 700;"><i class="fas fa-check-circle"></i> Kapasitas Lapang Ideal (${AppState.soilMoisture.toFixed(1)}%) • Efisiensi Air 100%</span>`;
     } else if (tetesWaterMl > 0) {
       badgeText.innerHTML = `<span style="color: var(--tetes-green); font-weight: 700;"><i class="fas fa-seedling"></i> Uji Real-Time: ${tetesWaterMl} mL Terpakai • Hemat ${savingsPercent.toFixed(1)}% Air</span>`;
     } else {
-      badgeText.innerHTML = `<i class="fas fa-microchip"></i> Uji Real-Time Lahan: ${totalLogs} Titik Telemetri Aktif`;
     }
   }
 }

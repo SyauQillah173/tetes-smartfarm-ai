@@ -78,6 +78,9 @@ const FirebaseConnector = {
     }
   },
 
+  lastKnownUnixTs: null,
+  lastDataArrivalTs: 0,
+
   async fetchLatestTelemetry() {
     try {
       // 1. Coba ambil dari /latest_telemetry.json (Instant Realtime, zero index rules needed)
@@ -85,38 +88,39 @@ const FirebaseConnector = {
       if (liveRes.ok) {
         const liveData = await liveRes.json();
         if (liveData && typeof liveData === 'object' && liveData.soil_moisture !== undefined) {
-          this.setConnected(true);
+          const nowSec = Math.floor(Date.now() / 1000);
+          const dataUnix = liveData.timestamp_unix || (liveData.timestamp ? Math.floor(new Date(liveData.timestamp).getTime() / 1000) : 0);
+          
+          const isNewPacket = (this.lastKnownUnixTs === null || dataUnix > this.lastKnownUnixTs);
+          if (isNewPacket) {
+            this.lastKnownUnixTs = dataUnix;
+            this.lastDataArrivalTs = Date.now();
+          }
+
+          const ageSec = Math.abs(nowSec - dataUnix);
+          const timeSinceArrival = (Date.now() - this.lastDataArrivalTs) / 1000;
+          // Perangkat dianggap aktif/nyala jika paket baru tiba dalam kurun waktu <= 15 detik
+          const isFresh = (timeSinceArrival <= 15) && (ageSec <= 30);
+
+          const meta = {
+            ageSec: Math.min(ageSec, Math.round(timeSinceArrival)),
+            timeSinceArrival: Math.round(timeSinceArrival),
+            lastSeen: liveData.timestamp || (dataUnix ? new Date(dataUnix * 1000).toLocaleTimeString() : '-'),
+            data: liveData
+          };
+
+          this.setConnected(isFresh, meta);
+
           if (this.callbacks.onTelemetry) {
-            this.callbacks.onTelemetry(liveData, liveData.timestamp_unix || 'latest');
+            this.callbacks.onTelemetry(liveData, liveData.timestamp_unix || 'latest', isFresh, meta);
           }
           return;
         }
       }
-
-      // 2. Fallback query jika latest_telemetry belum ada
-      const url = `${this.dbUrl}/lstm_history/logs.json?orderBy="$key"&limitToLast=1`;
-      const response = await fetch(url, { method: 'GET' });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data && typeof data === 'object' && !data.error) {
-        const keys = Object.keys(data);
-        if (keys.length > 0) {
-          const latestKey = keys[0];
-          const record = data[latestKey];
-          this.setConnected(true);
-          if (this.callbacks.onTelemetry) {
-            this.callbacks.onTelemetry(record, latestKey);
-          }
-          return;
-        }
-      }
+      this.setConnected(false, { ageSec: 9999, lastSeen: '-' });
     } catch (err) {
       console.warn('[Firebase] Telemetry fetch notice:', err.message);
-      this.setConnected(false);
+      this.setConnected(false, { ageSec: 9999, lastSeen: '-' });
     }
   },
 
@@ -155,12 +159,10 @@ const FirebaseConnector = {
     }
   },
 
-  setConnected(status) {
-    if (this.isConnected !== status) {
-      this.isConnected = status;
-      if (this.callbacks.onStatusChange) {
-        this.callbacks.onStatusChange(status);
-      }
+  setConnected(status, meta = {}) {
+    this.isConnected = status;
+    if (this.callbacks.onStatusChange) {
+      this.callbacks.onStatusChange(status, meta);
     }
   }
 };

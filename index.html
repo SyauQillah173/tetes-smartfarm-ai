@@ -92,6 +92,16 @@
         </div>
 
         <div class="header-tools">
+          <!-- Smart Live Device State Pill -->
+          <div id="headerDevicePill" class="quick-telemetry-chip" style="background: #f0fdf4; border-color: #86efac; color: #15803d; font-weight: 700;">
+            <span id="headerDevicePulse" class="guardian-indicator-dot online" style="width: 8px; height: 8px;"></span>
+            <span id="headerDeviceStatusText">Alat Online</span>
+          </div>
+
+          <div class="quick-telemetry-chip">
+            <i class="fas fa-bolt text-solar"></i>
+            <span>Beban: <strong id="headerLoadWatt">2.2 W</strong></span>
+          </div>
           <div class="quick-telemetry-chip">
             <i class="fas fa-sun text-solar"></i>
             <span>EBT: <strong id="headerSolarWatt">-- W</strong></span>
@@ -134,6 +144,40 @@
              =================================================================== -->
         <div id="tab-overview" class="tab-content-container" style="display: flex; flex-direction: column; gap: 20px;">
           
+          <!-- Smart Device Guardian (Online/Offline State, Uptime, Power & Heartbeat) -->
+          <div id="deviceGuardianStrip" class="device-guardian-strip is-online">
+            <div class="guardian-left">
+              <div id="guardianPulseDot" class="guardian-indicator-dot online"></div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span id="guardianDeviceStateTitle" class="guardian-title">ESP32 NODE 01: ONLINE & AKTIF</span>
+                  <span id="guardianDeviceChip" class="guardian-chip chip-online"><i class="fas fa-circle-check"></i> SEDANG NYALA</span>
+                </div>
+                <div id="guardianSubtext" class="guardian-subtext">
+                  Perangkat fisik terhubung ke Hotspot • Telemetri IoT dikirim tiap 5 detik ke Firebase.
+                </div>
+              </div>
+            </div>
+
+            <div class="guardian-metrics-right">
+              <div class="guardian-stat-item">
+                <span class="guardian-stat-label"><i class="fas fa-clock"></i> WAKTU OPERASIONAL</span>
+                <span id="guardianUptimeVal" class="guardian-stat-val mono-font">00:00:00</span>
+                <span id="guardianUptimeLabel" class="guardian-stat-sub">Durasi Nyala</span>
+              </div>
+              <div class="guardian-stat-item">
+                <span class="guardian-stat-label"><i class="fas fa-bolt text-solar"></i> BEBAN LISTRIK</span>
+                <span id="guardianLoadWattVal" class="guardian-stat-val mono-font">2.2 W</span>
+                <span id="guardianLoadWattSub" class="guardian-stat-sub">Daya ESP32 Standby</span>
+              </div>
+              <div class="guardian-stat-item">
+                <span class="guardian-stat-label"><i class="fas fa-heart-pulse" style="color: #f43f5e;"></i> HEARTBEAT</span>
+                <span id="guardianHeartbeatVal" class="guardian-stat-val mono-font">Baru saja</span>
+                <span id="guardianLastSeenTime" class="guardian-stat-sub">Ping Aktif</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Official Infographic Showcase Card (Matching PDF Theme) -->
           <div class="pdf-hero-card">
             <div class="pdf-hero-left">
@@ -437,19 +481,27 @@
                   <div class="ebt-diagram-flow">
                     <div class="pv-spec-row">
                       <span style="color: var(--text-muted);">Daya Panel PV:</span>
-                      <span id="solarWattBadge" class="pv-spec-val text-solar">68.4 W</span>
+                      <span id="solarWattBadge" class="pv-spec-val text-solar">-- W</span>
+                    </div>
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Beban Daya Sistem:</span>
+                      <span id="scadaSystemLoadWatt" class="pv-spec-val" style="color: #f59e0b;">2.2 W</span>
+                    </div>
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Neraca Daya (Net):</span>
+                      <span id="scadaSystemNetWatt" class="pv-spec-val" style="color: var(--tetes-blue);">-2.2 W</span>
                     </div>
                     <div class="pv-spec-row">
                       <span style="color: var(--text-muted);">Tegangan Bus:</span>
-                      <span id="solarVoltText" class="pv-spec-val">14.3 V</span>
+                      <span id="solarVoltText" class="pv-spec-val">12.6 V</span>
                     </div>
                     <div class="pv-spec-row">
                       <span style="color: var(--text-muted);">Arus Pengisian:</span>
-                      <span id="solarAmpText" class="pv-spec-val">4.78 A</span>
+                      <span id="solarAmpText" class="pv-spec-val">0.00 A</span>
                     </div>
                     <div class="pv-spec-row">
                       <span style="color: var(--text-muted);">Radiasi Surya:</span>
-                      <span id="solarRadText" class="pv-spec-val">720 W/m²</span>
+                      <span id="solarRadText" class="pv-spec-val">0 W/m²</span>
                     </div>
                   </div>
 
@@ -520,6 +572,26 @@
                       </div>
                     </div>
 
+                  </div>
+
+                  <!-- Smart Actuator Timing & Power Consumption Intelligence -->
+                  <div class="actuator-timing-box">
+                    <div class="timing-col">
+                      <span class="timing-label"><i class="fas fa-play text-emerald-500"></i> Waktu Nyala Pompa:</span>
+                      <span id="actuatorPumpStartTime" class="timing-val mono-font">--:--:--</span>
+                    </div>
+                    <div class="timing-col">
+                      <span class="timing-label"><i class="fas fa-stop text-rose-500"></i> Waktu Mati Pompa:</span>
+                      <span id="actuatorPumpStopTime" class="timing-val mono-font">--:--:--</span>
+                    </div>
+                    <div class="timing-col">
+                      <span class="timing-label"><i class="fas fa-stopwatch text-cyan-500"></i> Durasi Siram:</span>
+                      <span id="actuatorPumpDuration" class="timing-val mono-font">0 detik</span>
+                    </div>
+                    <div class="timing-col">
+                      <span class="timing-label"><i class="fas fa-bolt text-solar"></i> Daya Pompa:</span>
+                      <span id="actuatorPumpWatt" class="timing-val mono-font">0.0 W</span>
+                    </div>
                   </div>
 
                 </div>
@@ -614,6 +686,30 @@
                 <span class="scada-metric-title">Reduksi Emisi CO₂</span>
                 <div class="scada-metric-val" style="color: var(--brand-primary);"><span id="tab2CarbonKg">0.36</span> <span style="font-size: 13px; color: var(--text-dim);">kg</span></div>
                 <span class="scada-metric-sub">Faktor: 0.85 kg CO₂ / kWh</span>
+              </div>
+            </div>
+
+            <!-- Baris 2: Beban Listrik, Keseimbangan Daya & Waktu Operasi Real-Time -->
+            <div class="telemetry-row-grid" style="margin-top: 14px;">
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Beban Sistem Aktif</span>
+                <div class="scada-metric-val"><span id="tab2LoadWatt" style="color: #f59e0b;">2.2</span> <span style="font-size: 13px; color: var(--text-dim);">W</span></div>
+                <span id="tab2LoadSub" class="scada-metric-sub">ESP32 Standby</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Keseimbangan Daya Bersih</span>
+                <div class="scada-metric-val"><span id="tab2NetWatt" style="color: var(--tetes-blue);">-2.2</span> <span style="font-size: 13px; color: var(--text-dim);">W</span></div>
+                <span id="tab2NetSub" class="scada-metric-sub">Baterai Discharging</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Konsumsi Energi Listrik</span>
+                <div class="scada-metric-val"><span id="tab2ConsumedWh">0.00</span> <span style="font-size: 13px; color: var(--text-dim);">Wh</span></div>
+                <span class="scada-metric-sub">Integrasi Realtime per Detik</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Status Operasional IoT</span>
+                <div class="scada-metric-val" style="font-size: 16px;"><span id="tab2DeviceStateText" style="color: var(--tetes-green); font-weight: 800;">ONLINE</span></div>
+                <span id="tab2DeviceUptimeSub" class="scada-metric-sub">Uptime: 00:00:00</span>
               </div>
             </div>
 

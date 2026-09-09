@@ -955,6 +955,201 @@ canvas {
   gap: 12px;
 }
 
+/* ===================================================================
+   SMART DEVICE GUARDIAN (LIVE ONLINE/OFFLINE & POWER TRACKER)
+   =================================================================== */
+.device-guardian-strip {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 8px 24px rgba(11, 53, 94, 0.06);
+  transition: all 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.device-guardian-strip.is-online {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.92) 0%, rgba(255, 255, 255, 0.96) 100%);
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.12);
+}
+
+.device-guardian-strip.is-offline {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(255, 255, 255, 0.96) 100%);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.14);
+}
+
+.guardian-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.guardian-indicator-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.guardian-indicator-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: guardianPulseGreen 1.8s infinite;
+}
+
+.guardian-indicator-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: guardianPulseRed 1.5s infinite;
+}
+
+@keyframes guardianPulseGreen {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.8); }
+  70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes guardianPulseRed {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.guardian-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--tetes-navy);
+}
+
+.guardian-chip {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.guardian-chip.chip-online {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1.5px solid #86efac;
+}
+
+.guardian-chip.chip-offline {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1.5px solid #fca5a5;
+}
+
+.guardian-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.guardian-metrics-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.guardian-stat-item {
+  background: #ffffff;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+  box-shadow: var(--shadow-sm);
+}
+
+.guardian-stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.guardian-stat-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--tetes-navy);
+  margin: 2px 0;
+}
+
+.guardian-stat-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Smart Actuator Timing Box */
+.actuator-timing-box {
+  margin-top: 14px;
+  background: var(--bg-card-inner);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.timing-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timing-label {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.timing-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--tetes-navy);
+}
+
+@media (max-width: 900px) {
+  .device-guardian-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .guardian-metrics-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
 .sim-control-group {
   display: flex;
   align-items: center;
