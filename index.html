@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TETES SmartFarm OS - Sistem Irigasi Presisi & EBT Cabai</title>
+  
+  <!-- SEO & PWA Meta Tags -->
+  <meta name="description" content="Platform Monitoring & Kontrol Irigasi Mikro Presisi Berbasis IoT, AI LSTM, dan Energi Baru Terbarukan (EBT) pada Tanaman Cabai.">
+  <meta name="theme-color" content="#090d11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TETES OS">
+  
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+  <!-- Font Awesome & Chart.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Industrial Agritech Stylesheet -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <div class="enterprise-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="app-sidebar">
+      <div>
+        <div class="sidebar-header">
+          <img src="./icons/tetes-logo-horizontal.png" alt="TETES Logo" class="sidebar-brand-logo">
+          <div class="sidebar-header-subtitle">Setiap Tetes Lebih Berarti</div>
+        </div>
+
+        <div class="nav-section-title">Operasional Lahan</div>
+        <nav class="sidebar-nav">
+          <button class="nav-item-btn active" data-target="tab-overview">
+            <i class="fas fa-gauge-high"></i>
+            <span>Overview & Telemetri</span>
+          </button>
+          <button class="nav-item-btn" data-target="tab-solar-scada">
+            <i class="fas fa-solar-panel"></i>
+            <span>Sistem Daya EBT Surya</span>
+          </button>
+          <button class="nav-item-btn" data-target="tab-agronomy-roi">
+            <i class="fas fa-calculator"></i>
+            <span>Kalkulator Agronomi & ROI</span>
+          </button>
+          <button class="nav-item-btn" data-target="tab-data-logs">
+            <i class="fas fa-table-list"></i>
+            <span>Data Log & Riwayat</span>
+          </button>
+          <button class="nav-item-btn" data-target="tab-ai-consultant">
+            <i class="fas fa-robot"></i>
+            <span>AI Agronomist Advisor</span>
+          </button>
+          <button class="nav-item-btn" data-target="tab-node-config">
+            <i class="fas fa-sliders"></i>
+            <span>Konfigurasi & Kalibrasi</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="system-health-badge">
+          <div class="status-indicator-dot"></div>
+          <div>
+            <div style="font-weight: 700; color: var(--tetes-navy);">ESP32 Node 01</div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="sidebarStatusText">Firebase RTDB: Terhubung</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="app-main">
+      
+      <!-- TOP APP BAR -->
+      <header class="top-app-bar">
+        <div class="location-selector">
+          <img src="./icons/tetes-symbol.png" alt="TETES Symbol" style="height: 38px; width: 38px; object-fit: contain;">
+          <div>
+            <div class="location-badge">
+              <i class="fas fa-location-dot"></i>
+              <span>Lahan Blok A • Hortikultura Cabai</span>
+            </div>
+            <span class="location-subtext">Kabupaten Gresik (-7.0396°S, 112.534°E) • TETES SmartFarm OS</span>
+          </div>
+        </div>
+
+        <div class="header-tools">
+          <div class="quick-telemetry-chip">
+            <i class="fas fa-sun text-solar"></i>
+            <span>EBT: <strong id="headerSolarWatt">68.4 W</strong></span>
+          </div>
+          <div class="quick-telemetry-chip">
+            <i class="fas fa-battery-half" style="color: var(--brand-primary);"></i>
+            <span>Baterai: <strong id="headerBatteryPct">88%</strong></span>
+          </div>
+
+          <button id="headerInstallBtn" class="btn-enterprise btn-enterprise-primary" style="display: none;">
+            <i class="fas fa-download"></i> Pasang Aplikasi (PWA)
+          </button>
+
+          <button onclick="exportSensorLogCSV()" class="btn-enterprise btn-enterprise-secondary">
+            <i class="fas fa-file-arrow-down"></i> Export CSV
+          </button>
+        </div>
+      </header>
+
+      <!-- PAGE VIEWPORT -->
+      <div class="page-viewport">
+        
+        <!-- PWA Install Chrome Banner -->
+        <div id="pwaInstallBanner" class="scada-status-strip" style="display: none; border-color: var(--brand-primary); background: rgba(69, 169, 75, 0.08);">
+          <div class="scada-status-left">
+            <i class="fab fa-chrome fa-2x" style="color: var(--brand-primary);"></i>
+            <div>
+              <div style="font-weight: 700; color: var(--tetes-navy);">Aplikasi Web Siap Dipasang di Google Chrome</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Dapat diunduh langsung menjadi aplikasi native mandiri di Android / Desktop tanpa Play Store.</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnInstallApp" class="btn-enterprise btn-enterprise-primary"><i class="fas fa-download"></i> Pasang Sekarang</button>
+            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" class="btn-enterprise btn-enterprise-secondary">Nanti</button>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 1: OVERVIEW & TELEMETRI LAHAN
+             =================================================================== -->
+        <div id="tab-overview" class="tab-content-container" style="display: flex; flex-direction: column; gap: 20px;">
+          
+          <!-- Official Infographic Showcase Card (Matching PDF Theme) -->
+          <div class="pdf-hero-card">
+            <div class="pdf-hero-left">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span class="section-pill-green"><i class="fas fa-seedling"></i> Inovasi TETES</span>
+                <span class="badge-pill-blue"><i class="fas fa-droplet"></i> Smart Micro-Irrigation</span>
+                <span style="font-size: 11.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Kabupaten Gresik 2026</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
+                <div class="pdf-brand-title">TETES</div>
+              </div>
+              <div class="pdf-brand-subtitle">Inovasi untuk Pertanian Cerdas dan Hemat Air</div>
+              <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.6;">Solusi penyiraman presisi yang memanfaatkan data kondisi tanah, prediksi kelembapan berbasis AI Deep Learning LSTM, dan ramalan cuaca satelit Open-Meteo untuk efisiensi air ekstrem pada tanaman cabai.</p>
+              
+              <div class="pdf-hero-formula">
+                <span class="formula-chip"><i class="fas fa-microchip" style="color: var(--tetes-blue);"></i> IoT Monitoring Lahan</span>
+                <span class="formula-plus">+</span>
+                <span class="formula-chip"><i class="fas fa-brain" style="color: var(--tetes-green);"></i> AI Prediktif LSTM</span>
+                <span class="formula-plus">+</span>
+                <span class="formula-chip"><i class="fas fa-cloud-sun-rain" style="color: var(--solar-accent);"></i> Info Cuaca Satelit</span>
+                <span class="formula-plus">=</span>
+                <span class="formula-chip" style="background: var(--tetes-green-light); border-color: var(--brand-border); color: var(--tetes-green); font-weight: 800;"><i class="fas fa-check-circle"></i> TETES Irigasi Adaptif</span>
+              </div>
+            </div>
+
+            <div class="pdf-hero-center">
+              <div class="pdf-chili-photo-frame">
+                <img src="./icons/hero-chili-drip.jpg" alt="Tanaman Cabai & Irigasi Tetes">
+              </div>
+              <div class="pdf-chili-caption"><i class="fas fa-droplet" style="color: var(--tetes-blue);"></i> Uji Lahan Cabai</div>
+            </div>
+
+            <div class="pdf-hero-right">
+              <div class="hero-saving-badge">
+                <span class="section-pill-green" style="font-size: 11px; padding: 4px 14px; margin-bottom: 6px;"><i class="fas fa-chart-pie"></i> Hasil Pengujian</span>
+                <div class="hero-saving-val">87,11%</div>
+                <div class="hero-saving-label">Pengurangan Penggunaan Air</div>
+                
+                <!-- Benchmark Horizontal Comparison Bars -->
+                <div class="benchmark-bars-box">
+                  <div class="benchmark-row">
+                    <div class="benchmark-header-row">
+                      <span>Konvensional</span>
+                      <span class="mono-font">10.800 mL</span>
+                    </div>
+                    <div class="benchmark-track">
+                      <div class="benchmark-fill-conv"></div>
+                    </div>
+                  </div>
+                  <div class="benchmark-row">
+                    <div class="benchmark-header-row">
+                      <span style="color: var(--tetes-green); font-weight: 800;">TETES Presisi</span>
+                      <span class="mono-font" style="color: var(--tetes-green); font-weight: 800;">1.392 mL</span>
+                    </div>
+                    <div class="benchmark-track">
+                      <div class="benchmark-fill-tetes"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="badge-test-days">
+                  <i class="fas fa-calendar-check"></i> Pengujian 12 Hari Lahan
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Industrial SCADA Operating Strip -->
+          <div class="scada-status-strip">
+            <div class="scada-status-left">
+              <div id="scadaModeBadge" class="status-badge-chip active-auto">AUTO AI</div>
+              <div>
+                <div id="decisionActionTitle" class="status-desc-text">Monitoring Standby (Zona Perakaran Optimal)</div>
+                <div id="decisionActionReason" class="status-desc-sub">Sensor tanah dan AI LSTM memantau tingkat kelembapan tanah tanaman cabai.</div>
+              </div>
+            </div>
+
+            <!-- Demo Simulation Controls -->
+            <div class="scada-status-right">
+              <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Uji Demo Lomba:</span>
+              <div class="sim-control-group">
+                <button id="btnToggleSim" class="sim-btn-compact active">Simulasi ON</button>
+                <button id="btnSimRain" class="sim-btn-compact"><i class="fas fa-cloud-rain"></i> Hujan 85%</button>
+                <button id="btnSimDry" class="sim-btn-compact"><i class="fas fa-temperature-arrow-up"></i> Kering 28%</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Official 6-Step Workflow Section (Cara Kerja TETES Sesuai Infografis PDF) -->
+          <div class="workflow-section-panel">
+            <div class="workflow-header">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span class="section-pill-green"><i class="fas fa-route"></i> Cara Kerja TETES</span>
+                <span style="font-size: 13.5px; font-weight: 700; color: var(--tetes-navy);">Alur Kerja Otomasi Cerdas dari Sensor Lahan hingga Keputusan Presisi</span>
+              </div>
+              <span class="badge-pill-blue" style="font-size: 11px; padding: 4px 12px;"><i class="fas fa-microchip"></i> Closed-Loop IoT & AI</span>
+            </div>
+
+            <div class="workflow-grid">
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-temperature-arrow-down"></i>
+                  <span class="workflow-step-num">1</span>
+                </div>
+                <div class="workflow-node-title">Data Kondisi Tanah</div>
+                <div class="workflow-node-desc">Sensor membaca kelembapan tanah (Capacitive), suhu perakaran (DS18B20), & udara (DHT22).</div>
+              </div>
+
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-brain"></i>
+                  <span class="workflow-step-num">2</span>
+                </div>
+                <div class="workflow-node-title">Prediksi AI</div>
+                <div class="workflow-node-desc">Model LSTM memprediksi tren perubahan kelembapan tanah 15-60 menit ke depan.</div>
+              </div>
+
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-cloud-sun-rain"></i>
+                  <span class="workflow-step-num">3</span>
+                </div>
+                <div class="workflow-node-title">Informasi Cuaca</div>
+                <div class="workflow-node-desc">Sistem membaca prakiraan radar hujan satelit Open-Meteo Gresik sebagai pertimbangan.</div>
+              </div>
+
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-clipboard-check"></i>
+                  <span class="workflow-step-num">4</span>
+                </div>
+                <div class="workflow-node-title">Keputusan Penyiraman</div>
+                <div class="workflow-node-desc">Algoritma mengevaluasi ambang cabai (40-50%) dan menunda siram jika akan turun hujan.</div>
+              </div>
+
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-faucet-drip"></i>
+                  <span class="workflow-step-num">5</span>
+                </div>
+                <div class="workflow-node-title">Penyiraman Otomatis</div>
+                <div class="workflow-node-desc">ESP32 mengaktifkan Relay Pompa 12V & Solenoid Valve menyalurkan air terukur zona akar.</div>
+              </div>
+
+              <div class="workflow-node">
+                <div class="workflow-icon-circle">
+                  <i class="fas fa-mobile-screen-button"></i>
+                  <span class="workflow-step-num">6</span>
+                </div>
+                <div class="workflow-node-title">Monitoring</div>
+                <div class="workflow-node-desc">Kondisi lahan, grafik telemetri, prediksi AI, dan baterai EBT dipantau via web app real-time.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top 4 Metric KPI Cards -->
+          <div class="kpi-cards-grid">
+            
+            <div class="kpi-card">
+              <div class="kpi-card-header">
+                <span class="kpi-title">Kelembapan Tanah Aktual</span>
+                <div class="kpi-icon-wrapper"><i class="fas fa-droplet text-emerald-400"></i></div>
+              </div>
+              <div class="kpi-main-val">
+                <span id="heroMoistureVal" class="mono-font">42.5</span>
+                <span class="kpi-unit">%</span>
+              </div>
+              <div class="kpi-footer-meta">
+                <span>Target: 40.0% - 50.0%</span>
+                <span class="kpi-range-pill good">Zona Aman</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-card-header">
+                <span class="kpi-title">Daya Pembangkit EBT Surya</span>
+                <div class="kpi-icon-wrapper"><i class="fas fa-solar-panel text-solar"></i></div>
+              </div>
+              <div class="kpi-main-val">
+                <span id="heroSolarVal" class="mono-font">68.4</span>
+                <span class="kpi-unit">W</span>
+              </div>
+              <div class="kpi-footer-meta">
+                <span>Modul: 100 Wp Mono</span>
+                <span class="kpi-range-pill good">Zero Grid</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-card-header">
+                <span class="kpi-title">Kapasitas Baterai (SoC)</span>
+                <div class="kpi-icon-wrapper"><i class="fas fa-battery-three-quarters text-cyan-400"></i></div>
+              </div>
+              <div class="kpi-main-val">
+                <span id="heroBatteryVal" class="mono-font">88</span>
+                <span class="kpi-unit">%</span>
+              </div>
+              <div class="kpi-footer-meta">
+                <span>LiFePO4 12V 30Ah</span>
+                <span class="kpi-range-pill good">Otonom 3 Hari</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-card-header">
+                <span class="kpi-title">Indeks Transpirasi (VPD)</span>
+                <div class="kpi-icon-wrapper"><i class="fas fa-wind text-indigo-400"></i></div>
+              </div>
+              <div class="kpi-main-val">
+                <span id="heroVpdVal" class="mono-font">1.15</span>
+                <span class="kpi-unit">kPa</span>
+              </div>
+              <div class="kpi-footer-meta">
+                <span>Ideal: 0.8 - 1.2 kPa</span>
+                <span class="kpi-range-pill good">Fotosintesis Puncak</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Main 2-Column Dashboard Grid -->
+          <div class="layout-2col-grid">
+            
+            <!-- Left Column: SCADA Telemetry & AI Forecast Chart -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- Telemetry Matrix Panel -->
+              <div class="enterprise-panel">
+                <div class="panel-header-bar">
+                  <span class="section-pill-green"><i class="fas fa-microchip"></i> Telemetri Sensor Lapangan Real-time</span>
+                  <span class="panel-tag-meta">ESP32 Sampling: 3s</span>
+                </div>
+
+                <div class="telemetry-row-grid">
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Suhu Udara</span>
+                    <div class="scada-metric-val"><span id="gaugeAirTempNum">31.4</span><span style="font-size: 13px; color: var(--text-dim);"> °C</span></div>
+                    <span class="scada-metric-sub">DHT22 (GPIO 23)</span>
+                  </div>
+
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Kelembapan Udara</span>
+                    <div class="scada-metric-val"><span id="gaugeAirHumiNum">68.0</span><span style="font-size: 13px; color: var(--text-dim);"> %</span></div>
+                    <span class="scada-metric-sub">DHT22 (GPIO 23)</span>
+                  </div>
+
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Suhu Perakaran</span>
+                    <div class="scada-metric-val"><span id="gaugeSoilTempNum">26.8</span><span style="font-size: 13px; color: var(--text-dim);"> °C</span></div>
+                    <span class="scada-metric-sub">DS18B20 (GPIO 4)</span>
+                  </div>
+
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Titik Embun</span>
+                    <div class="scada-metric-val"><span id="gaugeDewPointNum">24.6</span><span style="font-size: 13px; color: var(--text-dim);"> °C</span></div>
+                    <span class="scada-metric-sub">Magnus Formula</span>
+                  </div>
+
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Prediksi LSTM +15m</span>
+                    <div class="scada-metric-val" style="color: var(--cyan-accent);"><span id="decisionLstmVal">38.5</span><span style="font-size: 13px; color: var(--text-dim);"> %</span></div>
+                    <span class="scada-metric-sub">soil_lstm_smooth</span>
+                  </div>
+
+                  <div class="scada-metric-box">
+                    <span class="scada-metric-title">Prakiraan Hujan</span>
+                    <div class="scada-metric-val"><span id="weatherRainProb">15</span><span style="font-size: 13px; color: var(--text-dim);"> %</span></div>
+                    <span class="scada-metric-sub">Open-Meteo Radar</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Deep Learning Forecast Chart -->
+              <div class="enterprise-panel">
+                <div class="panel-header-bar">
+                  <span class="section-pill-green"><i class="fas fa-chart-line"></i> Analisis Deret Waktu & AI LSTM</span>
+                  <span class="panel-tag-meta">Window: 72 Seq (15m Interval)</span>
+                </div>
+
+                <div style="height: 280px; position: relative;">
+                  <canvas id="moistureForecastChart"></canvas>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+                  <span><strong>AI Model:</strong> LSTM 2-Layer with Dropout (386 KB)</span>
+                  <span><strong>Fitur:</strong> Soil Moisture, Soil Temp, Air Temp, Humidity, Dew Point</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: EBT Solar SCADA & Actuator Console -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- EBT Solar SCADA Panel -->
+              <div class="enterprise-panel">
+                <div class="panel-header-bar">
+                  <span class="section-pill-blue"><i class="fas fa-solar-panel"></i> Pembangkit Tenaga Surya & BESS</span>
+                  <span class="status-badge-chip" style="background: var(--solar-accent-light); color: var(--solar-accent); border: 1px solid var(--solar-border);">EBT Mandiri</span>
+                </div>
+
+                <div class="ebt-scada-container">
+                  <div class="ebt-diagram-flow">
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Daya Panel PV:</span>
+                      <span id="solarWattBadge" class="pv-spec-val text-solar">68.4 W</span>
+                    </div>
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Tegangan Bus:</span>
+                      <span id="solarVoltText" class="pv-spec-val">14.3 V</span>
+                    </div>
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Arus Pengisian:</span>
+                      <span id="solarAmpText" class="pv-spec-val">4.78 A</span>
+                    </div>
+                    <div class="pv-spec-row">
+                      <span style="color: var(--text-muted);">Radiasi Surya:</span>
+                      <span id="solarRadText" class="pv-spec-val">720 W/m²</span>
+                    </div>
+                  </div>
+
+                  <div class="battery-scada-gauge">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
+                      <span>Baterai LiFePO4 12V</span>
+                      <span id="batteryPctText" class="mono-font" style="color: var(--brand-primary);">88%</span>
+                    </div>
+                    <div class="battery-scada-meter">
+                      <div id="batteryBarInner" class="battery-scada-fill"></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                      Reduksi Karbon: <strong id="solarCarbonText" style="color: var(--cyan-accent);">0.36 kg CO₂</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background: var(--bg-card-inner); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; border-left: 3px solid var(--solar-accent);">
+                  <strong style="color: var(--solar-accent);">Advis Energi Cerdas:</strong> <span id="energyAdvisoryText">Pasokan Energi Mandiri Stabil. Sistem berjalan dalam mode efisiensi EBT.</span>
+                </div>
+              </div>
+
+              <!-- Actuator Console Rack -->
+              <div class="enterprise-panel">
+                <div class="panel-header-bar">
+                  <span class="section-pill-navy"><i class="fas fa-toggle-on"></i> Kendali Aktuator & Katup</span>
+                  <span class="panel-tag-meta">Relay 2-Ch (Active Logic)</span>
+                </div>
+
+                <div class="control-rack-box">
+                  
+                  <div class="mode-segmented-control">
+                    <button id="btnModeAuto" class="mode-tab-btn active">
+                      <i class="fas fa-brain"></i> Mode AUTO (AI-Driven)
+                    </button>
+                    <button id="btnModeManual" class="mode-tab-btn">
+                      <i class="fas fa-hand"></i> Mode MANUAL
+                    </button>
+                  </div>
+
+                  <div class="actuator-rack-grid">
+                    
+                    <div class="actuator-card">
+                      <div class="actuator-card-header">
+                        <span class="actuator-name"><i class="fas fa-water text-cyan-400"></i> Pompa Mini 12V</span>
+                        <span id="pumpStatePill" class="actuator-state-badge off">OFF</span>
+                      </div>
+                      <div class="switch-field-row">
+                        <span style="font-size: 11px; color: var(--text-dim);">GPIO 25 (Relay 1)</span>
+                        <label class="industrial-toggle">
+                          <input type="checkbox" id="togglePump" disabled>
+                          <span class="ind-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="actuator-card">
+                      <div class="actuator-card-header">
+                        <span class="actuator-name"><i class="fas fa-faucet-drip text-emerald-400"></i> Solenoid 12V</span>
+                        <span id="solenoidStatePill" class="actuator-state-badge off">CLOSE</span>
+                      </div>
+                      <div class="switch-field-row">
+                        <span style="font-size: 11px; color: var(--text-dim);">GPIO 27 (Relay 2)</span>
+                        <label class="industrial-toggle">
+                          <input type="checkbox" id="toggleSolenoid" disabled>
+                          <span class="ind-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- 4 Impact Pillars (Dampak dan Potensi Sesuai Infografis PDF) -->
+          <div class="impact-pillars-panel">
+            <div class="workflow-header">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span class="section-pill-green"><i class="fas fa-bullseye"></i> Dampak dan Potensi</span>
+                <span style="font-size: 13.5px; font-weight: 700; color: var(--tetes-navy);">Kontribusi Nyata Inovasi TETES untuk Pertanian Presisi Berkelanjutan</span>
+              </div>
+              <span class="badge-pill-pdf" style="font-size: 11px; padding: 4px 12px;"><i class="fas fa-award"></i> Inovasi Gresik 2026</span>
+            </div>
+
+            <div class="impact-grid">
+              <div class="impact-card">
+                <div class="impact-icon-circle" style="color: #2563eb; background: #eff6ff;">
+                  <i class="fas fa-users"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 14px; color: var(--tetes-navy);">Sosial</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+                  Adopsi teknologi modern yang ramah petani lokal, mengurangi kerja fisik manual, dan pemantauan lahan lebih mudah dari mana saja.
+                </div>
+              </div>
+
+              <div class="impact-card">
+                <div class="impact-icon-circle" style="color: #16a34a; background: #f0fdf4;">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 14px; color: var(--tetes-navy);">Ekonomi</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+                  Efisiensi biaya operasional air dan listrik melalui tenaga surya mandiri. Estimasi pengembalian modal (ROI) di bawah 8 bulan.
+                </div>
+              </div>
+
+              <div class="impact-card">
+                <div class="impact-icon-circle" style="color: #0284c7; background: #f0f9ff;">
+                  <i class="fas fa-earth-americas"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 14px; color: var(--tetes-navy);">Lingkungan</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+                  Penghematan air sebesar 87,11%, pencegahan erosi tanah akibat over-watering, serta nol emisi karbon (Zero Grid Emission).
+                </div>
+              </div>
+
+              <div class="impact-card">
+                <div class="impact-icon-circle" style="color: #7c3aed; background: #f5f3ff;">
+                  <i class="fas fa-lightbulb"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 14px; color: var(--tetes-navy);">Budaya</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+                  Mendorong transformasi budaya pertanian konvensional berbasis intuisi menjadi pertanian presisi berbasis data dan inovasi AI.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===================================================================
+             TAB 2: SISTEM DAYA EBT SURYA (SCADA)
+             =================================================================== -->
+        <div id="tab-solar-scada" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="enterprise-panel">
+            <div class="panel-header-bar">
+              <span class="section-pill-blue"><i class="fas fa-solar-panel"></i> Arsitektur Pembangkit EBT Surya & Dekarbonisasi</span>
+              <span class="panel-tag-meta">100% Off-Grid Zero Emission</span>
+            </div>
+
+            <div class="telemetry-row-grid">
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Kapasitas PV Panel</span>
+                <div class="scada-metric-val">100 <span style="font-size: 13px; color: var(--text-dim);">Wp</span></div>
+                <span class="scada-metric-sub">Monocrystalline (18.5% η)</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Kapasitas Baterai</span>
+                <div class="scada-metric-val">360 <span style="font-size: 13px; color: var(--text-dim);">Wh</span></div>
+                <span class="scada-metric-sub">LiFePO4 12V 30Ah (>2500 cycle)</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Produksi Bersih/Tahun</span>
+                <div class="scada-metric-val">~165 <span style="font-size: 13px; color: var(--text-dim);">kWh</span></div>
+                <span class="scada-metric-sub">Kemandirian Energi 100%</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Reduksi CO₂/Tahun</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);">140.2 <span style="font-size: 13px; color: var(--text-dim);">kg</span></div>
+                <span class="scada-metric-sub">Setara 6.4 Pohon Produktif</span>
+              </div>
+            </div>
+
+            <div style="height: 280px; position: relative; margin-top: 10px;">
+              <canvas id="environmentalChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 3: KALKULATOR AGRONOMI & ROI
+             =================================================================== -->
+        <div id="tab-agronomy-roi" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="enterprise-panel">
+            <div class="panel-header-bar">
+              <span class="section-pill-green"><i class="fas fa-calculator"></i> Kalkulator Ilmiah Agronomi (FAO-56) & ROI</span>
+              <span class="panel-tag-meta">Penman-Monteith Standard</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: var(--bg-card-inner); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div>
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Populasi Tanaman (Polybag):</label>
+                <input type="number" id="calcInputPlants" value="500" min="10" max="50000" style="width: 100%; background: #ffffff; border: 1.5px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px; color: var(--tetes-navy); font-weight: 700; font-family: var(--font-mono);">
+              </div>
+              <div>
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Durasi Siklus Tanam (Hari):</label>
+                <input type="number" id="calcInputDays" value="90" min="1" max="365" style="width: 100%; background: #ffffff; border: 1.5px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px; color: var(--tetes-navy); font-weight: 700; font-family: var(--font-mono);">
+              </div>
+              <div>
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Fase Pertumbuhan Cabai:</label>
+                <select id="calcStageSelect" style="width: 100%; background: #ffffff; border: 1.5px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px; color: var(--tetes-navy); font-weight: 700;">
+                  <option value="initial">Vegetatif Awal (Kc = 0.60)</option>
+                  <option value="mid" selected>Pembungaan & Buah (Kc = 1.15)</option>
+                  <option value="late">Pematangan / Panen (Kc = 0.80)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="telemetry-row-grid" style="margin-top: 10px;">
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Evapotranspirasi ET₀</span>
+                <div class="scada-metric-val" id="calcEt0Val">4.62 mm/h</div>
+                <span class="scada-metric-sub">Hargreaves-Samani Formula</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Kebutuhan Air Tanaman</span>
+                <div class="scada-metric-val text-cyan-400" id="calcDailyPerPlant">0.48 L/tan/h</div>
+                <span class="scada-metric-sub">Presisi Zona Akar Cabai</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Air Dihemat</span>
+                <div class="scada-metric-val text-emerald-400" id="calcSavedWater">34.650 Liter</div>
+                <span class="scada-metric-sub">vs Siram Konvensional (1.25 L)</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Tingkat Efisiensi</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);" id="calcSavedPct">61.6%</div>
+                <span class="scada-metric-sub">Penghematan Air Ekstrem</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Payback Period (BEP)</span>
+                <div class="scada-metric-val text-solar">1.2 Tahun</div>
+                <span class="scada-metric-sub">+28.5% Hasil Panen Cabai</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 4: DATA LOGS & RIWAYAT SENSOR
+             =================================================================== -->
+        <div id="tab-data-logs" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="enterprise-panel">
+            <div class="panel-header-bar">
+              <span class="section-pill-navy"><i class="fas fa-table-list"></i> Riwayat Log Telemetri Sensor Lapangan</span>
+              <button onclick="exportSensorLogCSV()" class="btn-enterprise btn-enterprise-secondary">
+                <i class="fas fa-file-csv"></i> Download CSV
+              </button>
+            </div>
+
+            <div class="enterprise-table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Waktu (WIB)</th>
+                    <th>Kelembapan Tanah (%)</th>
+                    <th>Suhu Tanah (°C)</th>
+                    <th>Suhu Udara (°C)</th>
+                    <th>Kelembapan Udara (%)</th>
+                    <th>VPD (kPa)</th>
+                    <th>Daya EBT (W)</th>
+                    <th>Status Pompa</th>
+                  </tr>
+                </thead>
+                <tbody id="telemetryTableBody">
+                  <tr>
+                    <td>2026-08-29 02:00:15</td>
+                    <td>42.5%</td>
+                    <td>26.8°C</td>
+                    <td>31.4°C</td>
+                    <td>68.0%</td>
+                    <td>1.15 kPa</td>
+                    <td>68.4 W</td>
+                    <td><span class="actuator-state-badge off">OFF</span></td>
+                  </tr>
+                  <tr>
+                    <td>2026-08-29 01:45:00</td>
+                    <td>43.1%</td>
+                    <td>26.7°C</td>
+                    <td>31.2°C</td>
+                    <td>68.5%</td>
+                    <td>1.12 kPa</td>
+                    <td>70.1 W</td>
+                    <td><span class="actuator-state-badge off">OFF</span></td>
+                  </tr>
+                  <tr>
+                    <td>2026-08-29 01:30:00</td>
+                    <td>39.2%</td>
+                    <td>26.9°C</td>
+                    <td>31.8°C</td>
+                    <td>66.0%</td>
+                    <td>1.24 kPa</td>
+                    <td>72.5 W</td>
+                    <td><span class="actuator-state-badge on">ON</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 5: AI AGRONOMIST CHAT ADVISOR
+             =================================================================== -->
+        <div id="tab-ai-consultant" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="enterprise-panel">
+            <div class="panel-header-bar">
+              <span class="section-pill-green"><i class="fas fa-robot"></i> Asisten Pakar Agronomi & Energi Surya</span>
+              <span class="panel-tag-meta">Decision Support Engine</span>
+            </div>
+
+            <div class="chat-window-box">
+              <div id="chatMessages" class="chat-message-list">
+                <div class="chat-msg bot">
+                  Halo! Saya <strong>AI Agronomist TETES</strong>. Saya siap menganalisis data telemetri tanaman cabai Anda, membedah perhitungan efisiensi air 60%, serta menjelaskan cara kerja model AI LSTM dan sistem pembangkit listrik tenaga surya EBT mandiri. Ada yang ingin Anda tanyakan?
+                </div>
+              </div>
+
+              <div style="padding: 8px 14px; background: #ffffff; display: flex; gap: 6px; overflow-x: auto; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
+                <button class="quick-ask-btn" data-ask="Bagaimana kondisi tanaman cabai dan target VPD hari ini?">🌱 Kondisi Cabai & VPD</button>
+                <button class="quick-ask-btn" data-ask="Berapa persen penghematan air sistem TETES dibanding konvensional?">💧 Efisiensi Air 60%</button>
+                <button class="quick-ask-btn" data-ask="Bagaimana sistem EBT Solar Panel dan Baterai bekerja?">☀️ Sistem EBT Surya</button>
+                <button class="quick-ask-btn" data-ask="Jelaskan arsitektur model AI LSTM yang digunakan!">🧠 Model AI LSTM</button>
+                <button class="quick-ask-btn" data-ask="Apa keunggulan kompetitif inovasi ini untuk lomba di Gresik?">🏆 Keunggulan Lomba</button>
+              </div>
+
+              <div class="chat-prompt-bar">
+                <input type="text" id="chatInput" class="chat-prompt-input" placeholder="Tanyakan seputar agronomi cabai, efisiensi air, atau energi surya...">
+                <button id="chatSendBtn" class="btn-enterprise btn-enterprise-primary"><i class="fas fa-paper-plane"></i> Kirim</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             TAB 6: KONFIGURASI & KALIBRASI
+             =================================================================== -->
+        <div id="tab-node-config" class="tab-content-container" style="display: none; flex-direction: column; gap: 20px;">
+          <div class="enterprise-panel">
+            <div class="panel-header-bar">
+              <span class="section-pill-navy"><i class="fas fa-sliders"></i> Pemetaan Pinout & Kalibrasi Sensor</span>
+              <span class="panel-tag-meta">ESP32 DevKit V1 Hardware Mapping</span>
+            </div>
+
+            <div class="telemetry-row-grid">
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">DHT22 (Udara)</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);">GPIO 23</div>
+                <span class="scada-metric-sub">Digital Temp & Humidity</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">DS18B20 (Tanah)</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);">GPIO 4</div>
+                <span class="scada-metric-sub">OneWire Waterproof Probe</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Soil Moisture</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);">GPIO 34</div>
+                <span class="scada-metric-sub">ADC 12-Bit Analog Input</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Pompa 12V DC</span>
+                <div class="scada-metric-val text-cyan-400">GPIO 25</div>
+                <span class="scada-metric-sub">Relay 1 (Active HIGH)</span>
+              </div>
+              <div class="scada-metric-box">
+                <span class="scada-metric-title">Solenoid 12V</span>
+                <div class="scada-metric-val text-cyan-400">GPIO 27</div>
+                <span class="scada-metric-sub">Relay 2 (Active LOW)</span>
+              </div>
+            </div>
+
+            <div style="background: var(--bg-card-inner); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-top: 10px;">
+              <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--tetes-navy);"><i class="fas fa-compass-drafting text-emerald-400"></i> Kalibrasi Nilai RAW Analog Sensor Tanah</h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Rumus Kalibrasi: <code>% = ((RAW_DRY - RAW) / (RAW_DRY - RAW_WET)) * 100%</code></p>
+              <div style="display: flex; gap: 20px; font-size: 12px; color: var(--text-main);">
+                <span>RAW_DRY (Udara Kering): <strong class="mono-font">2071</strong> (0% Lembab)</span>
+                <span>RAW_WET (Air Jenuh): <strong class="mono-font">742</strong> (100% Lembab)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="./js/agronomy-calc.js"></script>
+  <script src="./js/solar-ebt.js"></script>
+  <script src="./js/ai-analytics.js"></script>
+  <script src="./js/firebase-config.js"></script>
+  <script src="./js/ai-assistant.js"></script>
+  <script src="./js/app.js"></script>
+
+  <!-- Service Worker Registration for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('[PWA] ServiceWorker registered with scope:', reg.scope))
+          .catch((err) => console.warn('[PWA] ServiceWorker registration failed:', err));
+      });
+    }
+  </script>
+
+</body>
+</html>
