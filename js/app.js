@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSimulationEngine();
   initActuatorControls();
   initCalculatorInteractions();
+  initScrollOptimization();
 
   // Initialize Charts
   if (window.AIAnalytics) {
@@ -88,9 +89,21 @@ function initNavigationTabs() {
       const targetSection = document.getElementById(targetId);
       if (targetSection) {
         targetSection.style.display = 'flex';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   });
+
+  // Enable seamless page scrolling even when mouse is positioned over the sidebar
+  const sidebar = document.querySelector('.app-sidebar');
+  if (sidebar) {
+    sidebar.addEventListener('wheel', (e) => {
+      window.scrollBy({
+        top: e.deltaY,
+        behavior: 'auto'
+      });
+    }, { passive: true });
+  }
 }
 
 /* ===================================================================
@@ -492,6 +505,26 @@ function initChatAssistant() {
       handleSend(q);
     });
   });
+}
+
+/* ===================================================================
+   SCROLL OPTIMIZATION & FLOATING BUTTON
+   =================================================================== */
+function initScrollOptimization() {
+  const btnScrollToTop = document.getElementById('btnScrollToTop');
+  if (btnScrollToTop) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 280) {
+        btnScrollToTop.classList.add('visible');
+      } else {
+        btnScrollToTop.classList.remove('visible');
+      }
+    }, { passive: true });
+
+    btnScrollToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 }
 
 /* ===================================================================

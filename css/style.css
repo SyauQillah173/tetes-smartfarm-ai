@@ -87,7 +87,15 @@
   box-sizing: border-box;
 }
 
-html, body {
+html {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll; /* Stable single root scroll container */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
   font-family: var(--font-sans);
   background-color: #e8f7fa;
   background-image: 
@@ -98,8 +106,11 @@ html, body {
   background-attachment: fixed, fixed, fixed;
   background-position: top left, top center, top center;
   color: var(--text-body);
-  min-height: 100vh;
+  min-height: 100%;
+  width: 100%;
+  position: relative;
   overflow-x: hidden;
+  overflow-y: visible; /* Prevents nested scroll trap */
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -288,7 +299,12 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   gap: 6px;
   flex: 1;
-  overflow-y: auto;
+  overflow-y: visible; /* Prevents capturing wheel events away from main document */
+}
+
+/* Ensure chart canvases never trap vertical touch/wheel gestures */
+canvas {
+  touch-action: pan-y !important;
 }
 
 .nav-item-btn {
@@ -1488,6 +1504,44 @@ input[type="text"], input[type="number"], select {
 
 .chat-input-field:focus {
   border-color: var(--tetes-blue);
+}
+
+/* ===================================================================
+   FLOATING SCROLL TO TOP BUTTON
+   =================================================================== */
+.btn-scroll-top {
+  position: fixed;
+  bottom: 26px;
+  right: 26px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--tetes-lime), var(--tetes-green));
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 20px rgba(60, 168, 43, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-scroll-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.btn-scroll-top:hover {
+  background: linear-gradient(135deg, var(--tetes-green), #2c7a22);
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 8px 24px rgba(60, 168, 43, 0.55);
 }
 
 /* ===================================================================
