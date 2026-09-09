@@ -25,11 +25,13 @@ const AppState = {
   telemetryAgeSec: 0,
 
   // Electrical Power & Energy SCADA (Realtime Load, Solar & Battery)
+  powerSource: 'AC_GRID', // 'AC_GRID' (Listrik Langsung PLN 220V) or 'SOLAR_BATTERY' (Baterai EBT)
+  powerSourceLabel: 'Listrik Langsung (PLN)',
   currentLoadWatt: 0.0,
   netPowerWatt: 0.0,
   dailyEnergyConsumedWh: 0.0,
   solarPowerWatt: 0.0,
-  solarVoltage: 12.6,
+  solarVoltage: 12.0,
   solarCurrent: 0.0,
   batterySoC: 88.0,
   solarIrradiance: 0,
@@ -414,8 +416,22 @@ function updateDeviceGuardianUI() {
 }
 
 /* ===================================================================
-   REAL-TIME ELECTRICAL POWER SCADA CALCULATIONS
+   REAL-TIME ELECTRICAL POWER SCADA CALCULATIONS (SMART DUAL-MODE)
    =================================================================== */
+window.togglePowerSourceMode = function() {
+  if (AppState.powerSource === 'AC_GRID') {
+    AppState.powerSource = 'SOLAR_BATTERY';
+    AppState.powerSourceLabel = 'Baterai & Surya EBT';
+    console.log('⚡ [TETES Power] Mode Catu Daya Dialihkan: Baterai & Surya EBT');
+  } else {
+    AppState.powerSource = 'AC_GRID';
+    AppState.powerSourceLabel = 'Listrik Langsung (PLN)';
+    console.log('⚡ [TETES Power] Mode Catu Daya Dialihkan: Listrik Langsung PLN');
+  }
+  updateElectricalPowerCalculations();
+  updateAllUI();
+};
+
 function updateElectricalPowerCalculations() {
   const esp32Watt = AppState.isDeviceOnline ? 2.2 : 0.0;
   const pumpWatt = (AppState.isDeviceOnline && AppState.pumpActive) ? 24.0 : 0.0;
@@ -436,6 +452,98 @@ function updateElectricalPowerCalculations() {
   }
 
   setElemText('actuatorPumpWatt', `${pumpWatt.toFixed(1)} W`);
+
+  // Smart Power Source Display (Listrik Langsung PLN vs Baterai EBT)
+  const isDirectGrid = (AppState.powerSource === 'AC_GRID');
+  const powerIcon = document.getElementById('headerPowerIcon');
+  const powerVal = document.getElementById('headerPowerVal');
+  const batteryPill = document.getElementById('headerBatteryPill');
+
+  if (powerIcon && powerVal) {
+    if (isDirectGrid) {
+      powerIcon.className = 'fas fa-plug';
+      powerIcon.style.color = '#0284c7';
+      powerVal.textContent = 'Listrik Langsung (PLN)';
+      if (batteryPill) batteryPill.style.display = 'none';
+    } else {
+      powerIcon.className = 'fas fa-solar-panel text-solar';
+      powerVal.textContent = `Baterai EBT (${AppState.batterySoC.toFixed(0)}%)`;
+      if (batteryPill) {
+        batteryPill.style.display = 'inline-flex';
+        setElemText('headerBatteryPct', `${AppState.batterySoC.toFixed(0)}%`);
+      }
+    }
+  }
+
+  // Hero Card 3 Dynamic Mode
+  const heroPowerTitle = document.getElementById('heroPowerTitle');
+  const heroPowerIcon = document.getElementById('heroPowerIcon');
+  const heroBatteryVal = document.getElementById('heroBatteryVal');
+  const heroBatteryUnit = document.getElementById('heroBatteryUnit');
+  const heroBatteryMeta = document.getElementById('heroBatteryMeta');
+  const heroBatteryBadge = document.getElementById('heroBatteryBadge');
+
+  if (heroPowerTitle && heroBatteryVal) {
+    if (isDirectGrid) {
+      heroPowerTitle.textContent = 'Sumber Daya Sistem';
+      if (heroPowerIcon) heroPowerIcon.className = 'fas fa-plug text-cyan-400';
+      heroBatteryVal.textContent = 'PLN';
+      if (heroBatteryUnit) heroBatteryUnit.textContent = '220V';
+      if (heroBatteryMeta) heroBatteryMeta.textContent = 'Adaptor AC-DC Kontinu';
+      if (heroBatteryBadge) {
+        heroBatteryBadge.textContent = 'Listrik Langsung';
+        heroBatteryBadge.className = 'kpi-range-pill good';
+      }
+    } else {
+      heroPowerTitle.textContent = 'Kapasitas Baterai (SoC)';
+      if (heroPowerIcon) heroPowerIcon.className = 'fas fa-battery-three-quarters text-cyan-400';
+      heroBatteryVal.textContent = `${AppState.batterySoC.toFixed(0)}`;
+      if (heroBatteryUnit) heroBatteryUnit.textContent = '%';
+      if (heroBatteryMeta) heroBatteryMeta.textContent = 'LiFePO4 12V 30Ah';
+      if (heroBatteryBadge) {
+        heroBatteryBadge.textContent = 'Otonom 3 Hari';
+        heroBatteryBadge.className = 'kpi-range-pill good';
+      }
+    }
+  }
+
+  // SCADA Battery Panel Dynamic Mode
+  const scadaPowerTitle = document.getElementById('scadaPowerSourceTitle');
+  const batteryPctText = document.getElementById('batteryPctText');
+  const batteryBarInner = document.getElementById('batteryBarInner');
+  const scadaPowerSub = document.getElementById('scadaPowerSourceSub');
+
+  if (scadaPowerTitle && batteryPctText) {
+    if (isDirectGrid) {
+      scadaPowerTitle.textContent = 'Mode Catu Daya: Listrik Langsung (PLN)';
+      batteryPctText.textContent = 'Kontinu 100%';
+      batteryPctText.style.color = '#0284c7';
+      if (batteryBarInner) {
+        batteryBarInner.style.width = '100%';
+        batteryBarInner.style.background = 'linear-gradient(90deg, #0284c7, #38bdf8)';
+      }
+      if (scadaPowerSub) {
+        scadaPowerSub.innerHTML = `Pasokan Listrik PLN Stabil • Beban Terukur: <strong style="color: #f59e0b;">${AppState.currentLoadWatt.toFixed(1)} W</strong>`;
+      }
+    } else {
+      scadaPowerTitle.textContent = 'Baterai LiFePO4 12V (EBT)';
+      batteryPctText.textContent = `${AppState.batterySoC.toFixed(0)}%`;
+      batteryPctText.style.color = 'var(--brand-primary)';
+      if (batteryBarInner) {
+        batteryBarInner.style.width = `${AppState.batterySoC}%`;
+        if (AppState.batterySoC < 25) {
+          batteryBarInner.style.background = 'linear-gradient(90deg, #f43f5e, #fb7185)';
+        } else if (AppState.batterySoC < 50) {
+          batteryBarInner.style.background = 'linear-gradient(90deg, #f59e0b, #facc15)';
+        } else {
+          batteryBarInner.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+        }
+      }
+      if (scadaPowerSub) {
+        scadaPowerSub.innerHTML = `Reduksi Karbon: <strong id="solarCarbonText" style="color: var(--cyan-accent);">${AppState.totalCarbonSavedKg.toFixed(2)} kg CO₂</strong>`;
+      }
+    }
+  }
 }
 
 /* ===================================================================
@@ -568,6 +676,16 @@ function handleFirebaseTelemetry(record, key, isFresh, meta) {
   // Evaluasi status online / offline
   const fresh = (isFresh !== undefined) ? isFresh : true;
   setDeviceOnlineState(fresh, meta || {});
+
+  // Smart detection sumber daya listrik langsung vs baterai
+  if (record.power_source === 'BATTERY' || (record.battery_voltage && Number(record.battery_voltage) > 6.0)) {
+    AppState.powerSource = 'SOLAR_BATTERY';
+    AppState.powerSourceLabel = 'Baterai & Surya EBT';
+    if (record.battery_soc !== undefined) AppState.batterySoC = parseFloat(Number(record.battery_soc).toFixed(0));
+  } else if (record.power_source === 'AC_GRID' || record.power_source === 'PLN') {
+    AppState.powerSource = 'AC_GRID';
+    AppState.powerSourceLabel = 'Listrik Langsung (PLN)';
+  }
 
   // Update data telemetri
   if (record.soil_moisture !== undefined && record.soil_moisture !== null) {

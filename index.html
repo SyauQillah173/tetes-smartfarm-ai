@@ -95,28 +95,33 @@
           <!-- Smart Live Device State Pill -->
           <div id="headerDevicePill" class="quick-telemetry-chip" style="background: #f0fdf4; border-color: #86efac; color: #15803d; font-weight: 700;">
             <span id="headerDevicePulse" class="guardian-indicator-dot online" style="width: 8px; height: 8px;"></span>
-            <span id="headerDeviceStatusText">Alat Online</span>
+            <span id="headerDeviceStatusText">Alat Online & Nyala</span>
           </div>
 
-          <div class="quick-telemetry-chip">
+          <!-- Smart Power Source Detection (Listrik Langsung PLN vs Baterai EBT) -->
+          <div id="headerPowerSourcePill" class="quick-telemetry-chip chip-clickable" onclick="togglePowerSourceMode()" title="Klik untuk beralih antara Listrik Langsung (PLN) dan Baterai EBT">
+            <i id="headerPowerIcon" class="fas fa-plug" style="color: #0284c7;"></i>
+            <span id="headerPowerLabel">Sumber: <strong id="headerPowerVal">Listrik Langsung (PLN)</strong></span>
+          </div>
+
+          <!-- Real-time Power Load -->
+          <div id="headerLoadPill" class="quick-telemetry-chip">
             <i class="fas fa-bolt text-solar"></i>
             <span>Beban: <strong id="headerLoadWatt">2.2 W</strong></span>
           </div>
-          <div class="quick-telemetry-chip">
-            <i class="fas fa-sun text-solar"></i>
-            <span>EBT: <strong id="headerSolarWatt">-- W</strong></span>
-          </div>
-          <div class="quick-telemetry-chip">
-            <i class="fas fa-battery-half" style="color: var(--brand-primary);"></i>
+
+          <!-- EBT / Baterai Pill (Muncul saat Mode Baterai EBT aktif) -->
+          <div id="headerBatteryPill" class="quick-telemetry-chip" style="display: none;">
+            <i class="fas fa-battery-three-quarters" style="color: var(--brand-primary);"></i>
             <span>Baterai: <strong id="headerBatteryPct">--%</strong></span>
           </div>
 
           <button id="headerInstallBtn" class="btn-enterprise btn-enterprise-primary" style="display: none;">
-            <i class="fas fa-download"></i> Pasang Aplikasi (PWA)
+            <i class="fas fa-download"></i> <span>Pasang App</span>
           </button>
 
           <button onclick="exportSensorLogCSV()" class="btn-enterprise btn-enterprise-secondary">
-            <i class="fas fa-file-arrow-down"></i> Export CSV
+            <i class="fas fa-file-arrow-down"></i> <span>Export CSV</span>
           </button>
         </div>
       </header>
@@ -366,16 +371,16 @@
 
             <div class="kpi-card">
               <div class="kpi-card-header">
-                <span class="kpi-title">Kapasitas Baterai (SoC)</span>
-                <div class="kpi-icon-wrapper"><i class="fas fa-battery-three-quarters text-cyan-400"></i></div>
+                <span id="heroPowerTitle" class="kpi-title">Kapasitas Baterai (SoC)</span>
+                <div class="kpi-icon-wrapper"><i id="heroPowerIcon" class="fas fa-battery-three-quarters text-cyan-400"></i></div>
               </div>
               <div class="kpi-main-val">
                 <span id="heroBatteryVal" class="mono-font">--</span>
-                <span class="kpi-unit">%</span>
+                <span id="heroBatteryUnit" class="kpi-unit">%</span>
               </div>
               <div class="kpi-footer-meta">
-                <span>LiFePO4 12V 30Ah</span>
-                <span class="kpi-range-pill good">Otonom 3 Hari</span>
+                <span id="heroBatteryMeta">LiFePO4 12V 30Ah</span>
+                <span id="heroBatteryBadge" class="kpi-range-pill good">Otonom 3 Hari</span>
               </div>
             </div>
 
@@ -507,14 +512,14 @@
 
                   <div class="battery-scada-gauge">
                     <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
-                      <span>Baterai LiFePO4 12V</span>
+                      <span id="scadaPowerSourceTitle">Baterai LiFePO4 12V</span>
                       <span id="batteryPctText" class="mono-font" style="color: var(--brand-primary);">88%</span>
                     </div>
                     <div class="battery-scada-meter">
                       <div id="batteryBarInner" class="battery-scada-fill"></div>
                     </div>
                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                      Reduksi Karbon: <strong id="solarCarbonText" style="color: var(--cyan-accent);">0.36 kg CO₂</strong>
+                      <span id="scadaPowerSourceSub">Reduksi Karbon: <strong id="solarCarbonText" style="color: var(--cyan-accent);">0.36 kg CO₂</strong></span>
                     </div>
                   </div>
                 </div>
