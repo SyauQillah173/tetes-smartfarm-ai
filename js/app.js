@@ -59,12 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
     AIAnalytics.initCharts();
   }
 
-  // Initialize Firebase connector
+  // Initialize Firebase connector with live telemetry, prediction, status, and history
   if (window.FirebaseConnector) {
     FirebaseConnector.init(
       (record) => handleFirebaseTelemetry(record),
       (pred) => handleFirebasePrediction(pred),
-      (status) => handleFirebaseStatusChange(status)
+      (status) => handleFirebaseStatusChange(status),
+      (records) => handleFirebaseHistory(records)
     );
   }
 
@@ -201,15 +202,12 @@ function handleFirebaseTelemetry(record) {
   if (!record || typeof record !== 'object') return;
 
   if (record.soil_moisture !== undefined && record.soil_moisture !== null) {
-    AppState.soilMoisture = parseFloat(record.soil_moisture);
-    if (window.AIAnalytics && typeof AIAnalytics.updateRealtimeMoisture === 'function') {
-      AIAnalytics.updateRealtimeMoisture(AppState.soilMoisture, record.timestamp);
-    }
+    AppState.soilMoisture = parseFloat(Number(record.soil_moisture).toFixed(1));
   }
-  if (record.soil_temp !== undefined && record.soil_temp !== null) AppState.soilTemp = parseFloat(record.soil_temp);
-  if (record.atmospheric_temp !== undefined && record.atmospheric_temp !== null) AppState.airTemp = parseFloat(record.atmospheric_temp);
-  if (record.humidity !== undefined && record.humidity !== null) AppState.airHumidity = parseFloat(record.humidity);
-  if (record.dew_point !== undefined && record.dew_point !== null) AppState.dewPoint = parseFloat(record.dew_point);
+  if (record.soil_temp !== undefined && record.soil_temp !== null) AppState.soilTemp = parseFloat(Number(record.soil_temp).toFixed(1));
+  if (record.atmospheric_temp !== undefined && record.atmospheric_temp !== null) AppState.airTemp = parseFloat(Number(record.atmospheric_temp).toFixed(1));
+  if (record.humidity !== undefined && record.humidity !== null) AppState.airHumidity = parseFloat(Number(record.humidity).toFixed(1));
+  if (record.dew_point !== undefined && record.dew_point !== null) AppState.dewPoint = parseFloat(Number(record.dew_point).toFixed(1));
 
   if (record.status_tanah) AppState.soilStatus = record.status_tanah;
   if (record.status_pompa) AppState.pumpActive = (record.status_pompa === 'ON');
@@ -223,6 +221,31 @@ function handleFirebaseTelemetry(record) {
     AppState.vpd = vpdObj.vpd;
   }
 
+  // Update real-time chart points without any fake data
+  if (window.AIAnalytics) {
+    if (AppState.soilMoisture !== null) {
+      AIAnalytics.updateRealtimeMoisture(AppState.soilMoisture, record.timestamp);
+    }
+    if (AppState.airTemp !== null || AppState.airHumidity !== null) {
+      AIAnalytics.updateRealtimeEnvironmental(AppState.airTemp, AppState.airHumidity, AppState.vpd, record.timestamp);
+    }
+  }
+
+  // Store in memory for CSV export
+  if (!AppState.historyLogs) AppState.historyLogs = [];
+  AppState.historyLogs.push({
+    timestamp: record.timestamp || new Date().toISOString().replace('T', ' ').substring(0, 19),
+    atmospheric_temp: AppState.airTemp,
+    humidity: AppState.airHumidity,
+    soil_temp: AppState.soilTemp,
+    soil_moisture: AppState.soilMoisture,
+    vpd: AppState.vpd,
+    solar_watt: AppState.solarPowerWatt,
+    battery_soc: AppState.batterySoC,
+    status_pompa: AppState.pumpActive ? 'ON' : 'OFF'
+  });
+  if (AppState.historyLogs.length > 500) AppState.historyLogs.shift();
+
   // Update live stream text badge
   const liveBadge = document.getElementById('liveIoTStatusText');
   if (liveBadge) {
@@ -232,13 +255,26 @@ function handleFirebaseTelemetry(record) {
   updateAllUI();
 }
 
+function handleFirebaseHistory(records) {
+  if (!records || !Array.isArray(records) || records.length === 0) return;
+  AppState.historyLogs = records;
+
+  // Populate chart with pure real data
+  if (window.AIAnalytics && typeof AIAnalytics.populateFromFirebaseLogs === 'function') {
+    AIAnalytics.populateFromFirebaseLogs(records);
+  }
+}
+
 function handleFirebasePrediction(pred) {
   if (!pred || typeof pred !== 'object') return;
   if (pred.predicted_soil_moisture !== undefined) {
-    AppState.aiPrediction = parseFloat(pred.predicted_soil_moisture);
+    AppState.aiPrediction = parseFloat(Number(pred.predicted_soil_moisture).toFixed(1));
   }
   if (pred.prediction_time) {
     AppState.aiPredictionTime = pred.prediction_time;
+  }
+  if (window.AIAnalytics && typeof AIAnalytics.updatePrediction === 'function') {
+    AIAnalytics.updatePrediction(pred);
   }
   updateAllUI();
 }
@@ -332,11 +368,6 @@ function updateAllUI() {
 
   // 6. Update Actuator State Toggles & Status
   updateActuatorUI();
-
-  // 7. Update Live Chart
-  if (window.AIAnalytics) {
-    AIAnalytics.pushTelemetryToChart(AppState.soilMoisture, AppState.aiPrediction);
-  }
 }
 
 function updateActuatorUI() {
@@ -471,28 +502,40 @@ function initScrollOptimization() {
    EXPORT DATA CSV
    =================================================================== */
 window.exportSensorLogCSV = function() {
-  const now = new Date();
   let csv = "Timestamp,Suhu_Udara_C,Kelembapan_Udara_Pct,Suhu_Tanah_C,Kelembapan_Tanah_Pct,VPD_kPa,Daya_Surya_W,Baterai_SoC_Pct,Status_Pompa\n";
   
-  for (let i = 24; i >= 0; i--) {
-    const t = new Date(now.getTime() - i * 15 * 60000);
-    const tsStr = t.toISOString().replace('T', ' ').substring(0, 19);
-    const at = (30 + Math.sin(i / 4) * 3).toFixed(1);
-    const ah = (65 + Math.cos(i / 4) * 15).toFixed(1);
-    const st = (26 + Math.sin(i / 5) * 1.5).toFixed(1);
-    const sm = (44 + Math.cos(i / 3) * 8).toFixed(1);
-    const vpd = (1.1 + Math.sin(i / 4) * 0.4).toFixed(2);
-    const pv = (60 + Math.sin(i / 4) * 30).toFixed(1);
-    const bat = (88 - i * 0.2).toFixed(0);
-    const pump = sm < 40 ? "ON" : "OFF";
-    csv += `${tsStr},${at},${ah},${st},${sm},${vpd},${pv},${bat},${pump}\n`;
+  if (AppState.historyLogs && AppState.historyLogs.length > 0) {
+    AppState.historyLogs.forEach(r => {
+      const ts = r.timestamp || (r.timestamp_unix ? new Date(r.timestamp_unix * 1000).toISOString() : '-');
+      const at = r.atmospheric_temp !== undefined ? r.atmospheric_temp : '-';
+      const ah = r.humidity !== undefined ? r.humidity : '-';
+      const st = r.soil_temp !== undefined ? r.soil_temp : '-';
+      const sm = r.soil_moisture !== undefined ? r.soil_moisture : '-';
+      const vpd = r.vpd !== undefined ? r.vpd : '-';
+      const pv = r.solar_watt !== undefined ? r.solar_watt : AppState.solarPowerWatt;
+      const bat = r.battery_soc !== undefined ? r.battery_soc : AppState.batterySoC;
+      const pump = r.status_pompa || (AppState.pumpActive ? "ON" : "OFF");
+      csv += `"${ts}",${at},${ah},${st},${sm},${vpd},${pv},${bat},${pump}\n`;
+    });
+  } else {
+    // Single live point if no history array yet
+    const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    const at = AppState.airTemp !== null ? AppState.airTemp : '-';
+    const ah = AppState.airHumidity !== null ? AppState.airHumidity : '-';
+    const st = AppState.soilTemp !== null ? AppState.soilTemp : '-';
+    const sm = AppState.soilMoisture !== null ? AppState.soilMoisture : '-';
+    const vpd = AppState.vpd !== null ? AppState.vpd : '-';
+    const pv = AppState.solarPowerWatt;
+    const bat = AppState.batterySoC;
+    const pump = AppState.pumpActive ? "ON" : "OFF";
+    csv += `"${ts}",${at},${ah},${st},${sm},${vpd},${pv},${bat},${pump}\n`;
   }
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `tetes_smartfarm_telemetry_${Date.now()}.csv`);
+  link.setAttribute('download', `tetes_smartfarm_telemetry_real_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

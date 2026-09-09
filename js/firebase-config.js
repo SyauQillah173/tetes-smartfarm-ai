@@ -11,13 +11,15 @@ const FirebaseConnector = {
   callbacks: {
     onTelemetry: null,
     onPrediction: null,
-    onStatusChange: null
+    onStatusChange: null,
+    onHistoryLoaded: null
   },
 
-  init(onTelemetry, onPrediction, onStatusChange) {
+  init(onTelemetry, onPrediction, onStatusChange, onHistoryLoaded) {
     this.callbacks.onTelemetry = onTelemetry;
     this.callbacks.onPrediction = onPrediction;
     this.callbacks.onStatusChange = onStatusChange;
+    this.callbacks.onHistoryLoaded = onHistoryLoaded;
     this.startListening();
   },
 
@@ -25,15 +27,42 @@ const FirebaseConnector = {
     console.log('[Firebase] Connecting to Realtime Database...', this.dbUrl);
     
     // First fetch
+    this.fetchHistoricalLogs();
     this.fetchLatestTelemetry();
     this.fetchLatestPrediction();
 
-    // Polling fallback every 4 seconds
+    // Polling fallback every 3.5 seconds
     if (this.pollTimer) clearInterval(this.pollTimer);
     this.pollTimer = setInterval(() => {
       this.fetchLatestTelemetry();
       this.fetchLatestPrediction();
-    }, 4000);
+    }, 3500);
+
+    // Refresh history logs every 30 seconds
+    setInterval(() => {
+      this.fetchHistoricalLogs();
+    }, 30000);
+  },
+
+  async fetchHistoricalLogs() {
+    try {
+      const url = `${this.dbUrl}/lstm_history/logs.json?orderBy="$key"&limitToLast=25`;
+      const response = await fetch(url);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data && typeof data === 'object' && !data.error) {
+        const sortedKeys = Object.keys(data).sort();
+        const records = sortedKeys
+          .map(k => data[k])
+          .filter(r => r && (r.soil_moisture !== undefined || r.atmospheric_temp !== undefined || r.humidity !== undefined));
+        
+        if (records.length > 0 && this.callbacks.onHistoryLoaded) {
+          this.callbacks.onHistoryLoaded(records);
+        }
+      }
+    } catch (err) {
+      console.warn('[Firebase] History logs fetch notice:', err.message);
+    }
   },
 
   async fetchLatestTelemetry() {

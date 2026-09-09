@@ -36,8 +36,8 @@ const SolarEBTEngine = {
     const power = this.pvSpecs.capacityWp * (irradiance / standardIrradiance) * tempLoss;
     const actualPower = Math.max(0, Math.min(this.pvSpecs.capacityWp * 1.05, parseFloat(power.toFixed(1))));
 
-    // Estimasi Vmp & Imp
-    const voltage = actualPower > 0 ? parseFloat((14.2 + (Math.random() * 0.4)).toFixed(2)) : 12.0;
+    // Estimasi Vmp & Imp berdasarkan beban daya aktual
+    const voltage = actualPower > 0 ? parseFloat((14.0 + (actualPower / this.pvSpecs.capacityWp) * 0.4).toFixed(2)) : 12.0;
     const current = voltage > 0 ? parseFloat((actualPower / voltage).toFixed(2)) : 0;
 
     return {
