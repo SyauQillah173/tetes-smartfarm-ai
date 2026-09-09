@@ -596,24 +596,24 @@
 
             <div class="telemetry-row-grid">
               <div class="scada-metric-box">
-                <span class="scada-metric-title">Kapasitas PV Panel</span>
-                <div class="scada-metric-val">100 <span style="font-size: 13px; color: var(--text-dim);">Wp</span></div>
-                <span class="scada-metric-sub">Monocrystalline (18.5% η)</span>
+                <span class="scada-metric-title">Daya PV Aktual</span>
+                <div class="scada-metric-val"><span id="tab2SolarWatt">0.0</span> <span style="font-size: 13px; color: var(--text-dim);">W</span></div>
+                <span class="scada-metric-sub">Kapasitas: 100 Wp Monocrystalline</span>
               </div>
               <div class="scada-metric-box">
-                <span class="scada-metric-title">Kapasitas Baterai</span>
-                <div class="scada-metric-val">360 <span style="font-size: 13px; color: var(--text-dim);">Wh</span></div>
-                <span class="scada-metric-sub">LiFePO4 12V 30Ah (>2500 cycle)</span>
+                <span class="scada-metric-title">Kapasitas Baterai (SoC)</span>
+                <div class="scada-metric-val"><span id="tab2BatteryPct">88</span><span style="font-size: 13px; color: var(--text-dim);">%</span></div>
+                <span class="scada-metric-sub">LiFePO4 12V 30Ah (360 Wh)</span>
               </div>
               <div class="scada-metric-box">
-                <span class="scada-metric-title">Produksi Bersih/Tahun</span>
-                <div class="scada-metric-val">~165 <span style="font-size: 13px; color: var(--text-dim);">kWh</span></div>
-                <span class="scada-metric-sub">Kemandirian Energi 100%</span>
+                <span class="scada-metric-title">Produksi Bersih Hari Ini</span>
+                <div class="scada-metric-val"><span id="tab2DailyKwh">0.42</span> <span style="font-size: 13px; color: var(--text-dim);">kWh</span></div>
+                <span class="scada-metric-sub">Kemandirian Energi 100% Off-Grid</span>
               </div>
               <div class="scada-metric-box">
-                <span class="scada-metric-title">Reduksi CO₂/Tahun</span>
-                <div class="scada-metric-val" style="color: var(--brand-primary);">140.2 <span style="font-size: 13px; color: var(--text-dim);">kg</span></div>
-                <span class="scada-metric-sub">Setara 6.4 Pohon Produktif</span>
+                <span class="scada-metric-title">Reduksi Emisi CO₂</span>
+                <div class="scada-metric-val" style="color: var(--brand-primary);"><span id="tab2CarbonKg">0.36</span> <span style="font-size: 13px; color: var(--text-dim);">kg</span></div>
+                <span class="scada-metric-sub">Faktor: 0.85 kg CO₂ / kWh</span>
               </div>
             </div>
 

@@ -59,6 +59,16 @@ const AIAssistant = {
 
     for (const item of this.knowledgeBase) {
       if (item.keywords.some(k => q.includes(k))) {
+        if (item.keywords.includes('cabai') && window.AppState) {
+          const s = window.AppState;
+          const liveStatus = `\n\n📊 **Data Telemetri Lahan Real-Time (ESP32 Live):**
+- **Kelembapan Tanah:** ${s.soilMoisture !== null ? s.soilMoisture.toFixed(1) + '%' : 'Membaca sensor...'} (${s.soilStatus || 'Standby'})
+- **Suhu Perakaran (DS18B20):** ${s.soilTemp !== null ? s.soilTemp.toFixed(1) + '°C' : '-'}
+- **Suhu & Kelembapan Udara (DHT22):** ${s.airTemp !== null ? s.airTemp.toFixed(1) + '°C' : '-'} / ${s.airHumidity !== null ? s.airHumidity.toFixed(1) + '%' : '-'}
+- **Indeks Transpirasi (VPD):** ${s.vpd !== null ? s.vpd.toFixed(2) + ' kPa' : '-'}
+- **Keputusan Otomasi AI:** ${s.decisionText || 'Standby'} (${s.reasonText || '-'})`;
+          return item.response + liveStatus;
+        }
         return item.response;
       }
     }

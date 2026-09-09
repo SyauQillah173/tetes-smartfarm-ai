@@ -46,19 +46,32 @@ const FirebaseConnector = {
 
   async fetchHistoricalLogs() {
     try {
-      const url = `${this.dbUrl}/lstm_history/logs.json?orderBy="$key"&limitToLast=25`;
-      const response = await fetch(url);
-      if (!response.ok) return;
-      const data = await response.json();
-      if (data && typeof data === 'object' && !data.error) {
-        const sortedKeys = Object.keys(data).sort();
-        const records = sortedKeys
-          .map(k => data[k])
-          .filter(r => r && (r.soil_moisture !== undefined || r.atmospheric_temp !== undefined || r.humidity !== undefined));
-        
-        if (records.length > 0 && this.callbacks.onHistoryLoaded) {
-          this.callbacks.onHistoryLoaded(records);
-        }
+      // Menggunakan shallow=true agar Firebase tidak meminta indexOn rules
+      const shallowRes = await fetch(`${this.dbUrl}/lstm_history/logs.json?shallow=true`);
+      if (!shallowRes.ok) return;
+      
+      const keysObj = await shallowRes.json();
+      if (!keysObj || typeof keysObj !== 'object') return;
+
+      const sortedKeys = Object.keys(keysObj).sort();
+      const recentKeys = sortedKeys.slice(-25); // Ambil 25 log sensor terbaru
+
+      // Fetch detail tiap key secara paralel
+      const records = await Promise.all(
+        recentKeys.map(k => 
+          fetch(`${this.dbUrl}/lstm_history/logs/${k}.json`)
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        )
+      );
+
+      const validRecords = records.filter(r => 
+        r && typeof r === 'object' && 
+        (r.soil_moisture !== undefined || r.atmospheric_temp !== undefined || r.humidity !== undefined)
+      );
+
+      if (validRecords.length > 0 && this.callbacks.onHistoryLoaded) {
+        this.callbacks.onHistoryLoaded(validRecords);
       }
     } catch (err) {
       console.warn('[Firebase] History logs fetch notice:', err.message);
