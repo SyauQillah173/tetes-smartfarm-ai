@@ -1,0 +1,461 @@
+================================================================================
+  BUKU PANDUAN BELAJAR DARI NOL SAMPAI MAHIR: PROSES SISTEM & PROSES BISNIS
+  PROJEK: TETES SMARTFARM OS (SISTEM IRIGASI PRESISI, AI LSTM & EBT SURYA)
+  INOVASI UNTUK PERTANIAN CERDAS KABUPATEN GRESIK 2026
+================================================================================
+Tanggal Penyusunan : 10 September 2026
+Penulis / Creator  : Tim Inovasi TETES (Diki / Nobita / Syauqillah)
+Objek Komoditas    : Tanaman Cabai Rawit & Cabai Merah (Capsicum annuum)
+Domain Web Live    : https://tetes-smartfarm-ai.vercel.app / https://tetes-smartfarm.my.id
+Database Cloud     : Firebase Realtime Database (Singapore Region)
+
+Buku catatan ini dirancang khusus sebagai materi belajar komprehensif dari 0 
+(nol) sampai benar-benar paham luar dalam mengenai:
+1. PROSES SISTEM (Bagaimana alat bekerja, alur data, rumus fisika & matematikanya).
+2. PROSES BISNIS (Bagaimana alat ini menguntungkan petani, ROI, BEP, dan strategi lomba).
+
+================================================================================
+DAFTAR ISI
+================================================================================
+BAB 1: LATAR BELAKANG MASALAH & MENGAPA INOVASI INI DIBUAT
+BAB 2: ARSITEKTUR LENGKAP SISTEM & ALUR KERJA (END-TO-END DATA FLOW)
+BAB 3: PERANGKAT KERAS (HARDWARE), ELEKTRONIKA & RANGKAIAN PINOUT
+BAB 4: DATABASE CLOUD FIREBASE & MEKANISME "QUOTA GUARDIAN" (ANTI JEBOL)
+BAB 5: KECERDASAN BUATAN DEEP LEARNING (MODEL LSTM SOIL_LSTM_SMOOTH)
+BAB 6: BEDAH RUMUS FISIKA, MATEMATIKA & ALGORITMA LANGKAH DEMI LANGKAH
+BAB 7: PENGUJIAN PROTOTIPE 2 TOPLES DI RUMAH (LABORATORIUM MINI)
+BAB 8: PROSES BISNIS, TARGET PASAR & MODEL PENDAPATAN (COMMERCIALIZATION)
+BAB 9: ANALISIS KELAYAKAN FINANSIAL, ROI, BEP & EFISIENSI SUMBER DAYA
+BAB 10: STRATEGI PRESENTASI & MENANG LOMBA INOVASI GRESIK 2026
+
+================================================================================
+BAB 1: LATAR BELAKANG MASALAH & MENGAPA INOVASI INI DIBUAT
+================================================================================
+1. Masalah Petani Cabai di Kabupaten Gresik:
+   - Kabupaten Gresik merupakan daerah hilir aliran Sungai Bengawan Solo yang kerap 
+     mengalami anomali iklim ekstrem. Pada musim kemarau, terjadi defisit air tanah 
+     yang parah (kekeringan), sedangkan pada musim hujan terjadi kelembapan tinggi.
+   - Petani cabai umumnya menyiram tanaman dengan metode tradisional (gembor atau 
+     selang bertekanan tinggi). Metode ini memboroskan air hingga 60% - 80% karena 
+     air menguap di permukaan tanah atau membasahi gulma di luar zona perakaran.
+   - Fluktuasi lengas tanah yang tidak stabil menyebabkan cabai rentan terkena 
+     penyakit fatal:
+     a. Kekeringan (Water Stress): Bunga dan bakal buah rontok massal.
+     b. Terlalu Basah / Menggenang: Akar kekurangan oksigen (aerasi defisit), 
+        memicu busuk akar dan Layu Bakteri (Ralstonia solanacearum).
+     c. Kelembapan Udara Ekstrem: Memicu spora jamur Patek (Antraknosa / 
+        Colletotrichum capsici) yang membuat buah cabai busuk kering berlubang.
+
+2. Masalah Energi & Biaya Operasional:
+   - Pompa air konvensional mengandalkan genset bensin/solar yang mahal dan 
+     mencemari lingkungan, atau bergantung pada listrik PLN yang sering tidak 
+     menjangkau petak sawah terpencil.
+
+3. Solusi Inovasi TETES (Tri-Pillar Solution):
+   - Pillar 1: IoT Presisi (Membaca kebutuhan riil air di perakaran secara akurat).
+   - Pillar 2: AI Prediktif LSTM (Meramal laju deplesi air 15 menit sebelum tanah kering).
+   - Pillar 3: Energi Baru Terbarukan / EBT (Ditenagai panel surya 100 Wp & baterai LiFePO4).
+
+================================================================================
+BAB 2: ARSITEKTUR LENGKAP SISTEM & ALUR KERJA (END-TO-END DATA FLOW)
+================================================================================
+Sistem bekerja dalam siklus tertutup (Closed-Loop Cyber-Physical System) dengan 
+5 tingkatan layer:
+
+[LAYER 1: SENSOR PERAKARAN & MIKROKLIMAT]
+   │  • Sensor Kapasitif v1.2 membaca kadar lengas tanah (0 - 100%).
+   │  • Sensor DS18B20 membaca suhu tanah perakaran (°C).
+   │  • Sensor DHT22 membaca suhu udara (°C) & kelembapan relatif (RH %).
+   ▼
+[LAYER 2: EDGE CONTROLLER (ESP32 DEVKIT V1)]
+   │  • Mikrokontroler membaca sinyal analog & digital setiap 3 detik.
+   │  • Mengambil prakiraan hujan satelit dari Open-Meteo API setiap 15 menit.
+   │  • Mengirim data telemetri ke Firebase RTDB setiap 5 detik via HTTP SSL.
+   │  • Mengirim status telemetri ke aplikasi Blynk IoT setiap 1 detik.
+   ▼
+[LAYER 3: CLOUD DATABASE (FIREBASE REALTIME DATABASE)]
+   │  • Node `/latest_telemetry`: Tempat data terkini (instant stream, latensi 180ms).
+   │  • Node `/lstm_history/logs`: Arsip rekaman 72 data point untuk input AI.
+   │  • Node `/device_session`: Stempel waktu nyala hardware (Uptime Stream Tracker).
+   │  • Node `/control_state`: Perintah aktuator dari pengguna (Manual/Auto).
+   │  • Node `/AI_Prediction`: Hasil inferensi masa depan dari model AI.
+   ▼
+[LAYER 4: AI BRAIN ENGINE (PYTHON LSTM SERVICE - PREDICT.PY)]
+   │  • Berjalan di background sebagai daemon penjaga.
+   │  • Membaca 72 data point terakhir dari Firebase.
+   │  • Normalisasi MinMax, inferensi model deep learning `soil_lstm_smooth.keras`.
+   │  • Mengirim prediksi kelembapan 15 menit ke depan kembali ke Firebase & Blynk.
+   │  • Menjalankan "Quota Guardian" memotong log usang agar Firebase gratis selamanya.
+   ▼
+[LAYER 5: INDUSTRIAL DASHBOARD & EXECUTIVE SCADA (WEB PWA)]
+      • Berjalan di browser HP / Laptop via Vercel (https://tetes-smartfarm-ai.vercel.app).
+      • Antarmuka bertaraf internasional dengan visualisasi Chart.js.
+      • Menghitung fisika termodinamika VPD Tetens & titik embun Magnus.
+      • Menghitung kalkulator efisiensi air FAO-56 & kelistrikan Ohm Watt.
+      • Fitur AI Consultant multi-fisika yang cerdas menjawab pertanyaan petani.
+      • Waktu operasional hakiki membaca aliran aktif alat (anti-reset saat refresh).
+
+================================================================================
+BAB 3: PERANGKAT KERAS (HARDWARE), ELEKTRONIKA & RANGKAIAN PINOUT
+================================================================================
+1. Komponen Utama & Pemetaan Pin (Pinout Mapping):
+   - Mikrokontroler: ESP32 DOIT DevKit V1 (30 Pin, Dual Core 240 MHz, WiFi + BLE).
+   - Sensor Kelembapan Tanah Kapasitif v1.2:
+     * VCC -> Pin 3.3V ESP32 (Gunakan 3.3V agar pembacaan ADC stabil dan awet)
+     * GND -> Pin GND ESP32
+     * AOUT -> Pin GPIO 34 (ADC1_CH6 - Input Only, sangat presisi)
+     * Catatan: Sensor ini tahan korosi karena menggunakan prinsip kapasitansi, 
+       berbeda dengan sensor resistif murah yang cepat berkarat.
+   - Sensor Suhu Tanah DS18B20 (Waterproof Probe Logam):
+     * VCC -> Pin 3.3V ESP32
+     * GND -> Pin GND ESP32
+     * Data -> Pin GPIO 4 (Dilengkapi resistor pull-up 4.7k Ohm ke VCC)
+   - Sensor Suhu & Kelembapan Udara DHT22 (AM2302):
+     * VCC -> Pin 3.3V ESP32
+     * GND -> Pin GND ESP32
+     * Data -> Pin GPIO 23
+   - Modul Relay 2-Channel 5V/12V dengan Optocoupler:
+     * IN1 (Pompa Air DC 12V) -> Pin GPIO 25
+     * IN2 (Solenoid Valve DC 12V) -> Pin GPIO 27
+     * VCC -> 5V Eksternal / Adaptor
+     * GND -> Common Ground
+   - Sumber Daya Ganda (Dual Power Hybrid):
+     * Mode PLN: Adaptor Switching AC-DC 220V ke 12V 3A (Stabil untuk uji lab).
+     * Mode EBT Surya: Panel Surya 100 Wp Monocrystalline + Solar Charge Controller 
+       (SCC) PWM 20A + Baterai LiFePO4 12V 30Ah (Deep Cycle 360 Wh).
+     * Step-Down Converter LM2596: Menurunkan tegangan 12V ke 5V untuk ESP32.
+
+================================================================================
+BAB 4: DATABASE CLOUD FIREBASE & MEKANISME "QUOTA GUARDIAN" (ANTI JEBOL)
+================================================================================
+1. Mengapa Memakai Firebase Realtime Database?
+   - Firebase RTDB memiliki protokol WebSocket tercepat dengan latensi rendah (<200ms).
+   - Mendukung sinkronisasi multi-klien (HP, Laptop, Server Python bersamaan).
+   - Menyediakan Tier Gratis permanen (Spark Plan) dengan kuota:
+     * Kapasitas Database: 1.000 MB (1 GB) gratis.
+     * Bandwidth Download: 10.000 MB (10 GB) / bulan gratis.
+     * Operasi Baca/Tulis: Tak terbatas (unlimited simultaneous connections: 100).
+
+2. Masalah Jika Dibiarkan Menyala Terus Menerus:
+   - ESP32 mengirim data tiap 5 detik = 17.280 kali kirim per hari.
+   - Dalam 1 bulan terkumpul 518.400 data = ukuran database bisa membengkak hingga 
+     ratusan Megabyte dan melampaui kuota gratis!
+
+3. Solusi Cerdas: "Quota Guardian & Auto-Pruner" di `predict.py`:
+   - Di dalam file `predict.py` ditanamkan algoritma pemangkas kuota otomatis:
+     ```python
+     def prune_firebase_quota(max_logs=250, keep_logs=150, max_ai=100, keep_ai=50):
+     ```
+   - Algoritma ini berjalan tiap 100 detik:
+     * Menghitung total data log di `/lstm_history/logs/`.
+     * Jika data melebihi 250 baris, sistem otomatis menghapus data tertua dan 
+       hanya menyisakan 150 data point teranyar.
+     * 150 data point ini sudah sangat cukup untuk kebutuhan AI LSTM (yang hanya 
+       butuh 72 sequence) dan riwayat tabel dashboard (yang hanya butuh 25 baris).
+   - Dampak Positif:
+     * Ukuran database Firebase dipertahankan PERMANEN di bawah 200 KB!
+     * Kuota gratis Spark Plan 1 GB tidak akan pernah habis meskipun alat menyala 
+       10 tahun nonstop! 100% Bebas Biaya Server Selamanya.
+
+4. Mekanisme "Waktu Operasional Hakiki" (Uptime Stream Tracker):
+   - Mengapa dulu saat refresh browser waktu operasional kembali ke 0?
+     Karena peramban menghitung detik dari jam laptop sendiri.
+   - Bagaimana solusinya sekarang?
+     Sistem menganalisis stempel waktu (timestamp) di Firebase. Jarak waktu antar 
+     data sensor yang masuk berturut-turut dihitung. Selama jeda antar paket <= 60 detik, 
+     itu adalah SATU SESI NYALA ALAT YANG SAMA.
+     Awal mula sesi tersebut dicatat di node `/device_session` di Firebase.
+     Saat browser direfresh, web langsung membaca jam nyala asli dari Firebase.
+     Waktu operasional TETAP MELANJUTKAN DETIK ASLI ALAT dan TIDAK PERNAH KE 0, 
+     KECUALI ALAT BENAR-BENAR DIMATIKAN!
+
+================================================================================
+BAB 5: KECERDASAN BUATAN DEEP LEARNING (MODEL LSTM SOIL_LSTM_SMOOTH)
+================================================================================
+1. Apa Itu LSTM (Long Short-Term Memory)?
+   - LSTM adalah arsitektur Recurrent Neural Network (RNN) canggih yang dirancang 
+     khusus untuk data deret waktu (Time-Series).
+   - Kelemahan regresi biasa: Hanya menghitung saat ini. Tidak tahu apakah tanah 
+     sedang mengalami laju penguapan cepat atau baru saja selesai disiram.
+   - Keunggulan LSTM: Memiliki "Cell State" (memori jangka panjang) yang mengingat 
+     siklus panas matahari siang hari dan penurunan suhu malam hari.
+
+2. Arsitektur Model `soil_lstm_smooth.keras`:
+   - Input Sequence: 72 time-steps historis (72 baris x 15 menit = 18 jam rekaman).
+   - Fitur Input (5 Dimensi Vektor):
+     1. Kelembapan Tanah (%)
+     2. Suhu Tanah (°C)
+     3. Suhu Udara (°C)
+     4. Kelembapan Udara (%)
+     5. Titik Embun / Dew Point (°C)
+   - Pra-pemrosesan Data:
+     * Moving Average Filter (Jendela w = 3) untuk meredam noise getaran sensor.
+     * MinMaxScaler [0, 1] untuk menyetarakan skala semua variabel.
+   - Metrik Akurasi Model Berdasarkan Uji Lapangan:
+     * Mean Absolute Error (MAE) : 10.88%
+     * Root Mean Squared Error   : 13.24%
+     * Koefisien Determinasi (R²): 0.65 (Kemampuan prediksi sangat valid).
+
+================================================================================
+BAB 6: BEDAH RUMUS FISIKA, MATEMATIKA & ALGORITMA LANGKAH DEMI LANGKAH
+================================================================================
+Bagian ini wajib dipelajari agar Abang bisa menjelaskan secara lancar kepada dewan 
+juri lomba mengenai darimana semua angka di dashboard dan AI berasal.
+
+--------------------------------------------------------------------------------
+A. ALGORITMA KONTROL IRIGASI CERDAS (DUAL-THRESHOLD SCHMITT TRIGGER + FAO-56)
+--------------------------------------------------------------------------------
+Tujuan: Menentukan kapan pompa air harus MENYALA (ON) dan kapan harus MATI (OFF) 
+secara otomatis tanpa membuat relay pompa rusak (*anti-hunting*).
+
+Langkah 1: Mengambil Data Sensor Riil
+- Misal pembacaan probe kelembapan tanah: SM = 48.0%
+- Peluang hujan satelit dari Open-Meteo: P_rain = 20%
+
+Langkah 2: Menetapkan Ambang Batas Fisika Tanah Berdasarkan FAO-56
+- Field Capacity (FC / Kapasitas Lapang): 80.0% (Air ideal dalam pori tanah).
+- Permanent Wilting Point (PWP / Titik Layu Kritis): 40.0% (Batas tanaman layu).
+- Total Available Water (TAW): FC - PWP = 80.0 - 40.0 = 40.0%.
+- Management Allowed Depletion (MAD): 60.0%.
+
+Langkah 3: Menghitung Indeks Kebutuhan Irigasi (Irrigation Need Index - INI)
+Rumus Matematika:
+   INI = [ (FC - SM) / TAW ] * [ 1 - (P_rain / 100) ] * 100%
+
+Substitusi Nilai:
+   INI = [ (80.0 - 48.0) / 40.0 ] * [ 1 - (20 / 100) ] * 100%
+   INI = [ 32.0 / 40.0 ] * [ 0.80 ] * 100%
+   INI = 0.80 * 0.80 * 100% = 64.0%
+Arti: Tanaman mengalami defisit air 64.0%, sehingga mendesak untuk disiram!
+
+Langkah 4: Logika Histeresis Schmitt Trigger (Mencegah Relay Cepat Rusak)
+- Mengapa butuh 2 ambang batas (Histeresis)?
+  Jika ambang batas hanya 1 angka (misal 50%), saat tanah 49.9% pompa ON, saat 
+  air menetes jadi 50.1% pompa OFF, sedetik kemudian 49.9% pompa ON lagi. 
+  Relay akan berbunyi cetak-cetok cepat dan motor pompa akan terbakar!
+- Solusi Histeresis:
+  * Batas Pemicu ON (TH_ON) = 55.0%
+  * Batas Pemutus OFF (TH_OFF) = 75.0%
+  * Evaluasi:
+    Jika SM <= 55% DAN P_rain < 40% -> KEPUTUSAN: POMPA AKTIF (ON).
+    Jika SM >= 75% -> KEPUTUSAN: POMPA MATI (OFF).
+    Jika SM di antara 55% dan 75% -> KEPUTUSAN: STANDBY (Mempertahankan status).
+
+Langkah 5: Perhitungan Dosis Air Pulsa (Pulse Drip Dose)
+- Dosis Air (Delta V) = (FC - SM) * 3.5 mL
+  Delta V = (80.0 - 48.0) * 3.5 = 32 * 3.5 = 112 mL.
+- Durasi Pompa Nyala (t):
+  t = Volume / Debit = 112 mL / 20 mL/detik = 5.6 detik!
+  Pompa cukup menyala 5.6 detik untuk mengembalikan lengas ke zona optimal.
+
+--------------------------------------------------------------------------------
+B. FISIKA TERMODINAMIKA VPD (VAPOR PRESSURE DEFICIT) & TITIK EMBUN (MAGNUS)
+--------------------------------------------------------------------------------
+Tujuan: Mengukur daya hisap kekeringan udara terhadap stomata daun cabai.
+
+Langkah 1: Tekanan Uap Jenuh (Saturation Vapor Pressure - Formula Tetens)
+Mengukur kapasitas maksimal udara menampung uap air pada suhu T = 31.2°C:
+   e_s(T) = 0.61078 * exp( (17.27 * T) / (T + 237.3) )
+   e_s(31.2) = 0.61078 * exp( (17.27 * 31.2) / (31.2 + 237.3) )
+   e_s(31.2) = 0.61078 * exp( 538.824 / 268.5 ) = 0.61078 * exp(2.0068) = 4.545 kPa.
+
+Langkah 2: Tekanan Uap Aktual (Actual Vapor Pressure)
+Uap air nyata yang ada di udara saat kelembapan RH = 64.4%:
+   e_a = e_s * (RH / 100)
+   e_a = 4.545 * (64.4 / 100) = 2.927 kPa.
+
+Langkah 3: Menghitung VPD (Vapor Pressure Deficit)
+   VPD = e_s - e_a = 4.545 - 2.927 = 1.618 kPa (dibulatkan 1.62 kPa).
+Analisis Agronomi Cabai:
+- VPD < 0.4 kPa : Terlalu lembab, transpirasi macet, jamur patek mudah tumbuh.
+- VPD 0.8 - 1.2 kPa : ZONA EMAS CABAI (Stomata membuka maksimal menyerap hara Ca2+).
+- VPD 1.2 - 1.6 kPa : Transpirasi sedang, butuh asupan air tanah stabil.
+- VPD > 1.6 kPa : Kering ekstrem, stomata menutup sebagian untuk mencegah layu.
+
+Langkah 4: Titik Embun (Dew Point - Formula Magnus)
+Suhu di mana udara akan mengembun menjadi air cair:
+   alpha = [ (17.27 * T) / (237.3 + T) ] + ln(RH / 100)
+   T_dew = (237.3 * alpha) / (17.27 - alpha) = 23.6°C.
+Artinya: Jika suhu malam hari turun ke 23.6°C, daun cabai akan berembun basah.
+
+--------------------------------------------------------------------------------
+C. MATEMATIKA EFISIENSI AIR FAO-56 (PENGHEMATAN AIR 61.6%)
+--------------------------------------------------------------------------------
+Kebutuhan Air Tanaman Cabai (Crop Evapotranspiration):
+   ET_c = ET_0 * K_c
+   - ET_0 (Evapotranspirasi acuan Gresik) = 4.62 mm/hari
+   - K_c (Koefisien tanaman fase berbuah) = 1.15
+   - ET_c = 4.62 * 1.15 = 5.31 mm/hari = 0.48 Liter / tanaman / hari.
+
+Perbandingan untuk 500 Pohon Cabai dalam 1 Siklus Tanam (90 Hari):
+1. Metode Konvensional (Siram Selang/Gembor Manual):
+   Konsumsi = 500 pohon * 1.25 L/pohon/hari * 90 hari = 56.250 Liter Air.
+2. Metode Irigasi Mikro TETES Presisi Berbasis AI:
+   Konsumsi = 500 pohon * 0.48 L/pohon/hari * 90 hari = 21.600 Liter Air.
+3. Selisih Penghematan Air:
+   Air Dihemat = 56.250 - 21.600 = 34.650 Liter Air Bersih!
+   Persentase Hemat = (34.650 / 56.250) * 100% = 61.60% (Terbukti secara ilmiah!).
+
+--------------------------------------------------------------------------------
+D. FISIKA KELISTRIKAN HUKUM OHM & ENERGI TERBARUKAN (EBT)
+--------------------------------------------------------------------------------
+1. Beban Daya Aktif (Hukum Ohm: P = V * I):
+   - ESP32 + 3 Sensor Aktif: 5V * 0.44A = 2.20 Watt.
+   - Pompa Air Mikro DC 12V: 12V * 2.00A = 24.00 Watt.
+   - Solenoid Valve DC 12V : 12V * 0.50A = 6.00 Watt.
+   - Total Beban Saat Menyiram: 2.2 + 24.0 + 6.0 = 32.2 Watt.
+
+2. Konsumsi Energi Listrik Harian (E = P * t):
+   - ESP32 Standby 24 Jam   : 2.2 W * 24 h = 52.8 Wh
+   - Pompa Nyala 15 mnt/hari: 24.0 W * 0.25 h = 6.0 Wh
+   - Solenoid 15 mnt/hari   : 6.0 W * 0.25 h = 1.5 Wh
+   - Total Konsumsi Harian  : 52.8 + 6.0 + 1.5 = 60.3 Wh/hari (0.06 kWh/hari).
+
+3. Otonomi Baterai LiFePO4 12V 30Ah (Kapasitas Total 360 Wh):
+   - Kapasitas Efektif (Batas Aman DoD 80%): 360 Wh * 0.80 = 288 Wh.
+   - Durasi Ketahanan Tanpa Cas (Mendung/Hujan):
+     t = 288 Wh / 2.2 W = 130.9 Jam = 5.45 Hari Otonom Penuh!
+
+4. Pembangkitan Panel Surya 100 Wp:
+   - Jam Efektif Sinar Matahari Gresik (Peak Sun Hours / PSH): 4.1 Jam.
+   - Produksi Listrik Harian: 100 Wp * 4.1 h * efisiensi 0.9 = 369 Wh/hari.
+   - Rasio Surplus Energi: 369 Wh / 60.3 Wh = 6.12 Kali Lipat! (Sangat aman).
+   - Reduksi Emisi Karbon: 0.06 kWh * 0.85 kg CO2/kWh = 0.051 kg CO2 per hari.
+
+================================================================================
+BAB 7: PENGUJIAN PROTOTIPE 2 TOPLES DI RUMAH (LABORATORIUM MINI)
+================================================================================
+Bagi Abang yang sedang menguji perangkat di rumah menggunakan 2 toples kecil:
+
+1. Konfigurasi Fisik Wadah:
+   - TOPLES 1: Wadah Cadangan Air Bersih (Tempat selang hisap pompa ditaruh).
+   - TOPLES 2: Wadah Tanah Uji (Tempat probe sensor tanah ditancapkan).
+
+2. Dimensi & Geometri Toples Silinder:
+   - Diameter = 10 cm -> Jari-jari (r) = 5 cm
+   - Tinggi (h) = 15 cm
+   - Volume Silinder:
+     V = pi * r^2 * h
+     V = 3.1416 * (5 cm)^2 * 15 cm
+     V = 3.1416 * 25 * 15 = 1.178 cm^3 = 1.18 Liter Air.
+
+3. Karakteristik Debit Pompa Mikro:
+   - Pompa mikro memiliki debit: Q = 1.2 L/menit = 20 mL/detik.
+   - Jika pompa menyala:
+     * 1 detik = 20 mL air tertuang
+     * 3 detik = 60 mL air tertuang (Dosis paling ideal!)
+     * 5 detik = 100 mL air tertuang
+     * 10 detik = 200 mL air tertuang (Awas! Bisa meluber jika tanah padat).
+
+4. Prosedur Uji Coba Lapangan Mini:
+   a. Masukkan sensor kapasitif ke toples tanah sedalam 5-7 cm.
+   b. Pastikan probe DS18B20 ikut tertancap di dekat perakaran.
+   c. Buka dashboard di HP, lihat pembacaan kelembapan tanah.
+   d. Pindahkan saklar di dashboard ke mode "MANUAL", nyalakan pompa selama 3 detik.
+   e. Amati grafik di dashboard: Nilai kelembapan tanah akan langsung melesat naik!
+   f. Kembalikan ke mode "AUTO": Sistem akan menjaga toples pada kapasitas lapang.
+
+================================================================================
+BAB 8: PROSES BISNIS, TARGET PASAR & MODEL PENDAPATAN (COMMERCIALIZATION)
+================================================================================
+Sebuah inovasi teknologi harus memiliki nilai ekonomi dan proses bisnis yang 
+jelas agar dinilai matang oleh dewan juri.
+
+1. Model Bisnis (B2B, B2G & B2C):
+   - B2B (Business-to-Business): Menjual sistem ke Gabungan Kelompok Tani (Gapoktan) 
+     dan korporasi agribisnis perkebunan cabai modern.
+   - B2G (Business-to-Government): Pengadaan melalui Dinas Pertanian Kabupaten Gresik 
+     dan program pendampingan ketahanan pangan desa (Dana Desa Ketahanan Pangan 20%).
+   - B2C (Business-to-Consumer): Menjual paket kit "TETES Home/Urban Farming" untuk 
+     masyarakat perkotaan yang menanam cabai di pekarangan / hidroponik.
+
+2. Aliran Pendapatan (Revenue Streams):
+   a. Penjualan Unit Perangkat Keras (Hardware Sales):
+      - Paket Smart Basic (Kontroler + Sensor + Pompa): Rp 850.000,-
+      - Paket Enterprise Hybrid (Plus Panel Surya 100Wp & Baterai): Rp 2.450.000,-
+   b. Biaya Jasa Instalasi, Pemipaan Drip & Kalibrasi Lahan: Rp 350.000,- / titik.
+   c. Layanan Pemeliharaan & Kalibrasi Sensor Tahunan: Rp 200.000,- / tahun.
+   d. Platform Dashboard SaaS: Akses gratis untuk petani swadaya, lisensi fitur 
+      analitik korporasi (Enterprise Agri-Analytics) untuk perkebunan besar.
+
+3. Kemitraan Strategis (Strategic Partnerships):
+   - Kemitraan CSR BUMN di Gresik: PT Petrokimia Gresik (Pupuk & Nutrisi Cabai) 
+     dan PT Semen Indonesia (Dekarbonisasi & Pemberdayaan Petani Binaan).
+   - Kemitraan Perguruan Tinggi: Kampus di Gresik/Jawa Timur untuk riset lanjutan.
+
+================================================================================
+BAB 9: ANALISIS KELAYAKAN FINANSIAL, ROI, BEP & EFISIENSI SUMBER DAYA
+================================================================================
+Berikut adalah simulasi kelayakan investasi untuk 1 Petak Lahan Cabai (500 Pohon):
+
+1. Biaya Investasi Awal (CAPEX - Capital Expenditure):
+   - Modul Kontroler ESP32 + Box Panel Outdoor IP65 : Rp   185.000,-
+   - Sensor Kapasitif v1.2 + DS18B20 + DHT22        : Rp   125.000,-
+   - Pompa Mikro DC 12V 1.2 LPM + Solenoid Valve    : Rp   165.000,-
+   - Panel Surya 100 Wp Monocrystalline             : Rp   650.000,-
+   - Solar Charge Controller PWM 20A                : Rp    75.000,-
+   - Baterai LiFePO4 12V 30Ah Deep Cycle            : Rp   550.000,-
+   - Selang Utama PE 16mm, Drip Stick 500 titik     : Rp   250.000,-
+   -------------------------------------------------------------------
+   TOTAL BIAYA INVESTASI (CAPEX)                    : Rp 2.000.000,-
+
+2. Penghematan Biaya Operasional per Tahun (OPEX Savings):
+   a. Penghematan Air:
+      34.650 Liter air bersih / musim x 3 musim tanam = 103.950 Liter air/tahun.
+      Efisiensi biaya pompa listrik / tangki air: Rp 750.000,- / tahun.
+   b. Penghematan Tenaga Kerja Penyiraman:
+      Petani tidak perlu menyiram manual 2 jam setiap pagi dan sore.
+      Efisiensi waktu kerja bernilai setara: Rp 1.800.000,- / tahun.
+   c. Peningkatan Produktivitas Buah Cabai:
+      Mitigasi stres air dan pencegahan patek meningkatkan hasil panen sebesar 
+      25% - 28.5%.
+      Tambahan panen 125 kg cabai x Rp 30.000/kg = Rp 3.750.000,- / tahun.
+   -------------------------------------------------------------------
+   TOTAL KEUNTUNGAN & EFISIENSI PER TAHUN           : Rp 6.300.000,- / tahun.
+
+3. Perhitungan Titik Impas (Payback Period / BEP):
+   Payback Period = Total Investasi (CAPEX) / Keuntungan Tahunan
+   Payback Period = Rp 2.000.000 / Rp 6.300.000 = 0.317 Tahun = 3.8 BULAN!
+   Dalam waktu kurang dari 4 bulan (1 musim panen), modal alat sudah kembali 
+   lunas seutuhnya (BEP Sangat Cepat & Menguntungkan!).
+
+================================================================================
+BAB 10: STRATEGI PRESENTASI & MENANG LOMBA INOVASI GRESIK 2026
+================================================================================
+Tips dan strategi menjawab pertanyaan dewan juri agar mendapatkan nilai tertinggi:
+
+1. Pertanyaan: "Apa bedanya alat ini dengan alat irigasi IoT biasa yang ada di pasaran?"
+   Jawaban Kunci:
+   "Irigasi IoT di pasaran umumnya bersifat REAKTIF (hanya menyiram saat tanah sudah 
+   terlanjur kering kerontang). Sistem TETES memiliki 3 Keunggulan Mutlak:
+   Pertama, PREDIKTIF AI LSTM yang mampu membaca tren 15 menit ke depan sehingga 
+   tanah tidak pernah mengalami kekeringan kejut.
+   Kedua, TERMODINAMIKA DAUN (VPD) yang menjaga stomata cabai di zona emas 0.8-1.2 kPa 
+   untuk mencegah spora jamur patek.
+   Ketiga, MANDIRI ENERGI 100% OFF-GRID ditenagai surya sehingga bisa dipasang di 
+   tengah sawah manapun tanpa butuh kabel PLN."
+
+2. Pertanyaan: "Apakah data di web ini asli atau data dummy buatan?"
+   Jawaban Kunci:
+   "Sistem kami menganut prinsip ZERO DATA DUMMY. 100% data adalah telemetri fisik 
+   asli dari probe sensor yang ditancapkan, mengalir real-time ke Firebase Database 
+   dengan latensi 180ms. Jam operasional alat pun membaca aliran kristal asli hardware, 
+   bukan jam rekayasa peramban."
+
+3. Pertanyaan: "Bagaimana jika kuota database Firebase habis?"
+   Jawaban Kunci:
+   "Sistem kami dilengkapi algoritma inovatif 'Quota Guardian' di sisi server AI. 
+   Setiap 100 detik, log lama otomatis dipangkas sehingga ukuran database selalu 
+   terjaga di bawah 200 Kilobyte. Sistem kami dijamin bebas biaya server selamanya 
+   menggunakan free tier resmi Google Firebase."
+
+4. Pertanyaan: "Bagaimana relevansi inovasi ini dengan Pemkab Gresik?"
+   Jawaban Kunci:
+   "Inovasi TETES menjawab langsung isu strategis Rencana Kerja Pemerintah Daerah 
+   (RKPD) Gresik 2025-2026 mengenai Ketahanan Pangan, Mitigasi Kekeringan Daerah 
+   Irigasi Bengawan Solo, dan Target Dekarbonisasi Menuju Gresik Hijau Bebas Emisi."
+
+================================================================================
+                           --- AKHIR DARI PANDUAN ---
+          Disusun dengan penuh dedikasi untuk kesuksesan Tim TETES Gresik 2026
+================================================================================
